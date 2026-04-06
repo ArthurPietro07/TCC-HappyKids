@@ -1,0 +1,82 @@
+<%- include('../partials/admin-header.ejs') %>
+
+<div class="mb-8">
+    <h1 class="text-3xl font-bold">Calendário de Ocupação</h1>
+    <p class="text-gray-600">Visualize a disponibilidade dos brinquedos</p>
+</div>
+
+<div class="bg-white rounded-lg shadow-lg p-6">
+    <div class="mb-4">
+        <label class="block mb-2">Selecione o Brinquedo:</label>
+        <select id="selectBrinquedo" class="w-full p-2 border rounded" onchange="carregarCalendario()">
+            <option value="">Todos os brinquedos</option>
+            <% if (brinquedos && brinquedos.length > 0) { %>
+                <% brinquedos.forEach(brinquedo => { %>
+                    <option value="<%= brinquedo.id %>"><%= brinquedo.nome %></option>
+                <% }) %>
+            <% } %>
+        </select>
+    </div>
+    
+    <div id="calendario" class="mt-6">
+        <!-- Calendário será carregado via JavaScript -->
+        <p class="text-center text-gray-500">Carregando calendário...</p>
+    </div>
+</div>
+
+<script>
+    let ocupacoes = [];
+    
+    function carregarCalendario() {
+        const brinquedoId = document.getElementById('selectBrinquedo').value;
+        const url = brinquedoId ? `/admin/calendario/ocupacoes?brinquedo_id=${brinquedoId}` : '/admin/calendario/ocupacoes';
+        
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                ocupacoes = data;
+                renderizarCalendario();
+            });
+    }
+    
+    function renderizarCalendario() {
+        const hoje = new Date();
+        const dias = [];
+        
+        // Gerar próximos 30 dias
+        for (let i = 0; i < 30; i++) {
+            const data = new Date(hoje);
+            data.setDate(hoje.getDate() + i);
+            dias.push(data);
+        }
+        
+        let html = '<div class="grid grid-cols-7 gap-2">';
+        
+        // Dias da semana
+        const semanas = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        semanas.forEach(semana => {
+            html += `<div class="font-bold text-center p-2 bg-gray-100 rounded">${semana}</div>`;
+        });
+        
+        // Dias
+        dias.forEach(data => {
+            const dataStr = data.toISOString().split('T')[0];
+            const ocupado = ocupacoes.some(o => o.data === dataStr && o.quantidade > 0);
+            const quantidade = ocupacoes.find(o => o.data === dataStr)?.quantidade || 0;
+            
+            html += `
+                <div class="border rounded p-2 text-center ${ocupado ? 'bg-red-100' : 'bg-green-50'}">
+                    <div class="font-semibold">${data.getDate()}/${data.getMonth()+1}</div>
+                    ${ocupado ? `<div class="text-xs text-red-600 mt-1">${quantidade} aluguel(is)</div>` : '<div class="text-xs text-green-600 mt-1">Disponível</div>'}
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        document.getElementById('calendario').innerHTML = html;
+    }
+    
+    document.addEventListener('DOMContentLoaded', carregarCalendario);
+</script>
+
+<%- include('../partials/footer.ejs') %>

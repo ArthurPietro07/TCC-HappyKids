@@ -1,0 +1,85 @@
+<%- include('../partials/admin-header.ejs') %>
+
+<div class="mb-8">
+    <h1 class="text-3xl font-bold">Gerenciar Aluguéis</h1>
+</div>
+
+<!-- Filtros -->
+<div class="bg-white p-4 rounded-lg shadow-md mb-6">
+    <select id="filtroStatus" class="p-2 border rounded" onchange="filtrarAlugueis()">
+        <option value="todos">Todos</option>
+        <option value="reservado">Reservados</option>
+        <option value="ativo">Ativos</option>
+        <option value="concluido">Concluídos</option>
+    </select>
+</div>
+
+<!-- Lista de Aluguéis -->
+<div class="bg-white rounded-lg shadow-lg overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-800 text-white">
+            <tr>
+                <th class="p-3">ID</th>
+                <th class="p-3">Cliente</th>
+                <th class="p-3">Período</th>
+                <th class="p-3">Valor</th>
+                <th class="p-3">Status</th>
+                <th class="p-3">Ações</th>
+            </tr>
+        </thead>
+        <tbody id="tabelaAlugueis">
+            <% if (alugueis && alugueis.length > 0) { %>
+                <% alugueis.forEach(aluguel => { %>
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-3">#<%= aluguel.id %></td>
+                        <td class="p-3"><%= aluguel.usuario_nome %></td>
+                        <td class="p-3"><%= new Date(aluguel.data_inicio).toLocaleDateString() %> - <%= new Date(aluguel.data_fim).toLocaleDateString() %></td>
+                        <td class="p-3">R$ <%= aluguel.valor_total %></td>
+                        <td class="p-3">
+                            <select onchange="alterarStatus(<%= aluguel.id %>, this.value)" class="p-1 rounded border">
+                                <option value="reservado" <%= aluguel.status === 'reservado' ? 'selected' : '' %>>Reservado</option>
+                                <option value="ativo" <%= aluguel.status === 'ativo' ? 'selected' : '' %>>Ativo</option>
+                                <option value="concluido" <%= aluguel.status === 'concluido' ? 'selected' : '' %>>Concluído</option>
+                            </select>
+                        </td>
+                        <td class="p-3">
+                            <button onclick="verDetalhes(<%= aluguel.id %>)" class="text-blue-600">Detalhes</button>
+                        </td>
+                    </tr>
+                <% }) %>
+            <% } else { %>
+                <tr><td colspan="6" class="text-center p-8">Nenhum aluguel encontrado</td></tr>
+            <% } %>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function alterarStatus(id, novoStatus) {
+        fetch(`/admin/alugueis/${id}/status`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({status: novoStatus})
+        }).then(res => {
+            if (res.ok) {
+                alert('Status atualizado!');
+                location.reload();
+            }
+        });
+    }
+    
+    function verDetalhes(id) {
+        alert(`Detalhes do aluguel #${id}\nImplementar modal ou página específica.`);
+    }
+    
+    function filtrarAlugueis() {
+        const status = document.getElementById('filtroStatus').value;
+        if (status === 'todos') {
+            location.reload();
+        } else {
+            window.location.href = `/admin/alugueis?status=${status}`;
+        }
+    }
+</script>
+
+<%- include('../partials/footer.ejs') %>

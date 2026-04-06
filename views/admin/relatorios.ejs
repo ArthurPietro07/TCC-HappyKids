@@ -1,0 +1,99 @@
+<%- include('../partials/admin-header.ejs') %>
+
+<div class="mb-8">
+    <h1 class="text-3xl font-bold">Relatórios</h1>
+</div>
+
+<div class="grid md:grid-cols-2 gap-8">
+    <!-- Brinquedos Mais Alugados -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-xl font-bold mb-4">Brinquedos Mais Alugados</h2>
+        <canvas id="graficoBrinquedos" height="300"></canvas>
+        <div class="mt-4">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr><th>Brinquedo</th><th>Total Aluguéis</th></tr>
+                </thead>
+                <tbody>
+                    <% if (brinquedosMaisAlugados && brinquedosMaisAlugados.length > 0) { %>
+                        <% brinquedosMaisAlugados.forEach(item => { %>
+                            <tr class="border-b">
+                                <td class="p-2"><%= item.nome %></td>
+                                <td class="p-2"><%= item.total %></td>
+                            </tr>
+                        <% }) %>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Faturamento por Período -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-xl font-bold mb-4">Faturamento por Período</h2>
+        <div class="mb-4">
+            <label class="block mb-2">Data Início</label>
+            <input type="date" id="dataInicio" class="w-full p-2 border rounded mb-2">
+            <label class="block mb-2">Data Fim</label>
+            <input type="date" id="dataFim" class="w-full p-2 border rounded mb-4">
+            <button onclick="calcularFaturamento()" class="bg-blue-600 text-white px-4 py-2 rounded w-full">
+                Calcular Faturamento
+            </button>
+        </div>
+        <div id="resultadoFaturamento" class="text-center">
+            <p class="text-gray-500">Selecione um período para ver o faturamento</p>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Gráfico de Brinquedos Mais Alugados
+    const ctx = document.getElementById('graficoBrinquedos').getContext('2d');
+    const dados = <%= JSON.stringify(brinquedosMaisAlugados || []) %>;
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: dados.map(item => item.nome),
+            datasets: [{
+                label: 'Quantidade de Aluguéis',
+                data: dados.map(item => item.total),
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+    
+    function calcularFaturamento() {
+        const dataInicio = document.getElementById('dataInicio').value;
+        const dataFim = document.getElementById('dataFim').value;
+        
+        if (!dataInicio || !dataFim) {
+            alert('Selecione as datas!');
+            return;
+        }
+        
+        fetch(`/admin/relatorios/faturamento?inicio=${dataInicio}&fim=${dataFim}`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('resultadoFaturamento').innerHTML = `
+                    <div class="bg-green-100 p-4 rounded">
+                        <p class="text-lg font-bold">Faturamento Total</p>
+                        <p class="text-3xl font-bold text-green-600">R$ ${data.total}</p>
+                        <p class="text-sm text-gray-600 mt-2">Período: ${dataInicio} até ${dataFim}</p>
+                        <p class="text-sm">Total de pedidos: ${data.totalPedidos}</p>
+                    </div>
+                `;
+            });
+    }
+</script>
+
+<%- include('../partials/footer.ejs') %>

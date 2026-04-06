@@ -1,0 +1,92 @@
+<%- include('partials/header.ejs') %>
+
+<section class="max-w-7xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8">Catálogo de Brinquedos</h1>
+    
+    <!-- Filtros -->
+    <div class="bg-white p-4 rounded-lg shadow-md mb-8">
+        <div class="flex flex-wrap gap-4">
+            <input type="text" id="busca" placeholder="Buscar brinquedo..." class="flex-1 p-2 border rounded-lg">
+            <button onclick="buscarBrinquedos()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Buscar</button>
+        </div>
+    </div>
+
+    <!-- Grid de Brinquedos -->
+    <div class="grid md:grid-cols-3 lg:grid-cols-4 gap-6" id="listaBrinquedos">
+        <% if (brinquedos && brinquedos.length > 0) { %>
+            <% brinquedos.forEach(brinquedo => { %>
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all">
+                    <img src="<%= brinquedo.imagem_url || '/uploads/placeholder.jpg' %>" alt="<%= brinquedo.nome %>" class="w-full h-48 object-cover">
+                    <div class="p-4">
+                        <h3 class="text-xl font-semibold mb-2"><%= brinquedo.nome %></h3>
+                        <p class="text-gray-600 text-sm mb-3"><%= brinquedo.descricao %></p>
+                        <p class="text-blue-600 font-bold">Diária: R$ <%= brinquedo.preco_diaria %></p>
+                        <p class="text-green-600 font-bold mb-3">Semanal: R$ <%= brinquedo.preco_semanal %></p>
+                        
+                        <% if (usuario && usuario.tipo !== 'admin') { %>
+                            <button onclick="adicionarAoCarrinho(<%= brinquedo.id %>, '<%= brinquedo.nome %>', <%= brinquedo.preco_diaria %>)" 
+                                    class="w-full bg-yellow-500 text-gray-900 py-2 rounded-lg hover:bg-yellow-600 transition-all">
+                                <i class="ri-shopping-cart-line"></i> Alugar
+                            </button>
+                        <% } else if (!usuario) { %>
+                            <a href="/login" class="block w-full bg-gray-400 text-white py-2 rounded-lg text-center hover:bg-gray-500 transition-all">
+                                Faça login para alugar
+                            </a>
+                        <% } else if (usuario && usuario.tipo === 'admin') { %>
+                            <button disabled class="w-full bg-gray-400 text-white py-2 rounded-lg cursor-not-allowed">
+                                Modo Admin - Não pode alugar
+                            </button>
+                        <% } %>
+                    </div>
+                </div>
+            <% }) %>
+        <% } else { %>
+            <p class="text-center col-span-4 text-gray-500">Nenhum brinquedo encontrado.</p>
+        <% } %>
+    </div>
+</section>
+
+<script>
+    function adicionarAoCarrinho(id, nome, preco) {
+        let carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
+        const itemExistente = carrinho.find(item => item.id === id);
+        
+        if (itemExistente) {
+            itemExistente.quantidade++;
+        } else {
+            carrinho.push({
+                id: id,
+                nome: nome,
+                preco_diaria: preco,
+                quantidade: 1
+            });
+        }
+        
+        localStorage.setItem('carrinho', JSON.stringify(carrinho));
+        
+        // Atualizar contador
+        const badge = document.getElementById('carrinhoCount');
+        if (badge) {
+            badge.textContent = carrinho.length;
+            badge.style.display = 'flex';
+        }
+        
+        alert(`${nome} adicionado ao carrinho!`);
+    }
+    
+    function buscarBrinquedos() {
+        const termo = document.getElementById('busca').value.toLowerCase();
+        const brinquedos = document.querySelectorAll('#listaBrinquedos > div');
+        
+        brinquedos.forEach(brinquedo => {
+            const nome = brinquedo.querySelector('h3').textContent.toLowerCase();
+            if (nome.includes(termo)) {
+                brinquedo.style.display = '';
+            } else {
+                brinquedo.style.display = 'none';
+            }
+        });
+    }
+</script>
+
+<%- include('partials/footer.ejs') %>

@@ -1,0 +1,113 @@
+<%- include('partials/header.ejs') %>
+
+<!-- Hero Section -->
+<section class="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-20">
+    <div class="max-w-7xl mx-auto px-4 text-center">
+        <h1 class="text-5xl font-bold mb-6">Bem-vindo à Happy Kids!</h1>
+        <p class="text-xl mb-8">A maior variedade de brinquedos para locação do Brasil</p>
+        <a href="/catalogo" class="bg-yellow-500 text-gray-900 px-8 py-3 rounded-lg font-semibold hover:bg-yellow-400 transition-all inline-flex items-center">
+            Ver Brinquedos <i class="ri-arrow-right-line ml-2"></i>
+        </a>
+    </div>
+</section>
+
+<!-- Diferenciais -->
+<section class="py-16">
+    <div class="max-w-7xl mx-auto px-4">
+        <h2 class="text-3xl font-bold text-center mb-12">Por que escolher a Happy Kids?</h2>
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="text-center p-6 bg-white rounded-lg shadow-lg">
+                <i class="ri-truck-line text-5xl text-blue-600 mb-4"></i>
+                <h3 class="text-xl font-semibold mb-2">Entrega Rápida</h3>
+                <p class="text-gray-600">Entregamos em até 24h na Grande São Paulo</p>
+            </div>
+            <div class="text-center p-6 bg-white rounded-lg shadow-lg">
+                <i class="ri-shield-check-line text-5xl text-blue-600 mb-4"></i>
+                <h3 class="text-xl font-semibold mb-2">Brinquedos Higienizados</h3>
+                <p class="text-gray-600">Limpeza e sanitização garantidas</p>
+            </div>
+            <div class="text-center p-6 bg-white rounded-lg shadow-lg">
+                <i class="ri-customer-service-line text-5xl text-blue-600 mb-4"></i>
+                <h3 class="text-xl font-semibold mb-2">Suporte 24/7</h3>
+                <p class="text-gray-600">Atendimento sempre disponível</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Brinquedos em Destaque -->
+<section class="bg-gray-100 py-16">
+    <div class="max-w-7xl mx-auto px-4">
+        <h2 class="text-3xl font-bold text-center mb-12">Brinquedos em Destaque</h2>
+        <div class="grid md:grid-cols-4 gap-6">
+            <% if (brinquedos && brinquedos.length > 0) { %>
+                <% brinquedos.slice(0, 4).forEach(brinquedo => { %>
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden hover-scale transition-all">
+                        <img src="<%= brinquedo.imagem_url || '/uploads/placeholder.jpg' %>" alt="<%= brinquedo.nome %>" class="w-full h-48 object-cover">
+                        <div class="p-4">
+                            <h3 class="text-lg font-semibold mb-2"><%= brinquedo.nome %></h3>
+                            <p class="text-gray-600 text-sm mb-2"><%= brinquedo.descricao.substring(0, 60) %>...</p>
+                            <p class="text-blue-600 font-bold">R$ <%= brinquedo.preco_diaria %>/dia</p>
+                            <a href="/catalogo" class="mt-3 inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">Ver Detalhes</a>
+                        </div>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <p class="text-center col-span-4">Carregando brinquedos...</p>
+            <% } %>
+        </div>
+    </div>
+</section>
+
+<!-- Depoimentos -->
+<section class="py-16">
+    <div class="max-w-7xl mx-auto px-4">
+        <h2 class="text-3xl font-bold text-center mb-12">O que nossos clientes dizem</h2>
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <i class="ri-double-quotes-L text-4xl text-gray-300"></i>
+                <p class="text-gray-600 mt-4">"Excelente serviço! Meu filho amou o pula-pula. Super recomendo!"</p>
+                <div class="mt-4">
+                    <p class="font-semibold">Ana Silva</p>
+                    <div class="text-yellow-500">
+                        <i class="ri-star-fill"></i>
+                        <i class="ri-star-fill"></i>
+                        <i class="ri-star-fill"></i>
+                        <i class="ri-star-fill"></i>
+                        <i class="ri-star-fill"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <i class="ri-double-quotes-L text-4xl text-gray-300"></i>
+                <p class="text-gray-600 mt-4">"Brinquedos muito bem conservados e atendimento super atencioso."</p>
+                <div class="mt-4">
+                    <p class="font-semibold">Carlos Mendes</p>
+                    <div class="text-yellow-500">
+                        <i class="ri-star-fill"></i>
+                        <i class="ri-star-fill"></i>
+                        <i class="ri-star-fill"></i>
+                        <i class="ri-star-fill"></i>
+                        <i class="ri-star-half-fill"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <i class="ri-double-quotes-L text-4xl text-gray-300"></i>
+                <p class="text-gray-600 mt-4">"Preços justos e entrega no prazo. Vou alugar novamente!"</p>
+                <div class="mt-4">
+                    <p class="font-semibold">Patrícia Lima</p>
+                    <div class="text-yellow-500">
+                        <i class="ri-star-fill"></i>
+                        <i class="ri-star-fill"></i>
+                        <i class="ri-star-fill"></i>
+                        <i class="ri-star-fill"></i>
+                        <i class="ri-star-fill"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<%- include('partials/footer.ejs') %>
