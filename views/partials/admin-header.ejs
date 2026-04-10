@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Happy Kids</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body class="bg-gray-100">
     <!-- Admin Navbar -->
     <nav class="bg-gray-900 text-white shadow-lg">
@@ -25,7 +28,9 @@
                     <a href="/admin/calendario" class="hover:text-yellow-500">Calendário</a>
                     <div class="border-l pl-4 flex items-center space-x-3">
                         <i class="ri-admin-line"></i>
-                        <span><%= usuario.nome %></span>
+                        <span>
+                            <%= usuario.nome %>
+                        </span>
                         <a href="/logout" class="text-red-400 hover:text-red-300">Sair</a>
                     </div>
                 </div>
@@ -33,20 +38,23 @@
         </div>
     </nav>
 
-    <div class="flex">
+    <!-- Container flex para sidebar e conteúdo -->
+    <div class="flex min-h-screen">
         <!-- Sidebar Admin -->
-        <aside class="w-64 bg-white shadow-lg min-h-screen">
+        <aside class="w-64 bg-white shadow-lg">
             <div class="p-6">
                 <ul class="space-y-4">
                     <li>
-                        <a href="/admin/dashboard" class="flex items-center space-x-3 text-gray-700 hover:text-blue-600">
+                        <a href="/admin/dashboard"
+                            class="flex items-center space-x-3 text-gray-700 hover:text-blue-600">
                             <i class="ri-dashboard-line text-xl"></i>
                             <span>Dashboard</span>
                         </a>
                     </li>
                     <li>
-                        <a href="/admin/brinquedos" class="flex items-center space-x-3 text-gray-700 hover:text-blue-600">
-                            <i class="ri-toy-line text-xl"></i>
+                        <a href="/admin/brinquedos"
+                            class="flex items-center space-x-3 text-gray-700 hover:text-blue-600">
+                            <i class="ri-image-edit-line text-xl"></i>
                             <span>Gerenciar Brinquedos</span>
                         </a>
                     </li>
@@ -57,13 +65,15 @@
                         </a>
                     </li>
                     <li>
-                        <a href="/admin/relatorios" class="flex items-center space-x-3 text-gray-700 hover:text-blue-600">
+                        <a href="/admin/relatorios"
+                            class="flex items-center space-x-3 text-gray-700 hover:text-blue-600">
                             <i class="ri-bar-chart-line text-xl"></i>
                             <span>Relatórios</span>
                         </a>
                     </li>
                     <li>
-                        <a href="/admin/calendario" class="flex items-center space-x-3 text-gray-700 hover:text-blue-600">
+                        <a href="/admin/calendario"
+                            class="flex items-center space-x-3 text-gray-700 hover:text-blue-600">
                             <i class="ri-calendar-line text-xl"></i>
                             <span>Calendário Ocupação</span>
                         </a>
@@ -72,5 +82,5 @@
             </div>
         </aside>
 
-        <!-- Main Content -->
+        <!-- Conteúdo principal -->
         <main class="flex-1 p-8">
