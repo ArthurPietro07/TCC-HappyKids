@@ -11,6 +11,9 @@ const adminRoutes = require('./routes/admin');
 
 const app = express();
 
+// Conectar ao MongoDB
+connectDB();
+
 // Configurações
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -42,12 +45,9 @@ app.use('/admin', adminRoutes);
 
 // Rota 404
 app.use((req, res) => {
-  res.status(404).render('404', { title: 'Página não encontrada' });
+  res.status(404).render('404', {
+    title: 'Página não encontrada'
+  });
 });
 
-// Iniciar servidor
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
-});
 module.exports = app;
