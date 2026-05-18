@@ -3,90 +3,161 @@
 <section class="max-w-7xl mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold mb-8">Catálogo de Brinquedos</h1>
     
-    <!-- Filtros -->
-    <div class="bg-white p-4 rounded-lg shadow-md mb-8">
-        <div class="flex flex-wrap gap-4">
-            <input type="text" id="busca" placeholder="Buscar brinquedo..." class="flex-1 p-2 border rounded-lg">
-            <button onclick="buscarBrinquedos()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Buscar</button>
-        </div>
+    <!-- Busca -->
+    <div class="mb-8">
+        <input type="text" id="busca" placeholder="Buscar brinquedo por nome..." 
+               class="w-full md:w-96 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
     </div>
-
+    
     <!-- Grid de Brinquedos -->
-    <div class="grid md:grid-cols-3 lg:grid-cols-4 gap-6" id="listaBrinquedos">
+    <div class="grid md:grid-cols-3 lg:grid-cols-4 gap-6" id="gridBrinquedos">
         <% if (brinquedos && brinquedos.length > 0) { %>
             <% brinquedos.forEach(brinquedo => { %>
-                <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all">
-                    <img src="<%= brinquedo.imagem_url || '/uploads/placeholder.jpg' %>" alt="<%= brinquedo.nome %>" class="w-full h-48 object-cover">
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition brinquedo-item" data-nome="<%= brinquedo.nome.toLowerCase() %>">
+                    <img src="<%= brinquedo.imagem_url || '/uploads/placeholder.jpg' %>" 
+                         class="w-full h-48 object-cover" 
+                         onerror="this.src='/uploads/placeholder.jpg'">
                     <div class="p-4">
-                        <h3 class="text-xl font-semibold mb-2"><%= brinquedo.nome %></h3>
-                        <p class="text-gray-600 text-sm mb-3"><%= brinquedo.descricao %></p>
-                        <p class="text-blue-600 font-bold">Diária: R$ <%= brinquedo.preco_diaria %></p>
-                        <p class="text-green-600 font-bold mb-3">Semanal: R$ <%= brinquedo.preco_semanal %></p>
-                        
-                        <% if (usuario && usuario.tipo !== 'admin') { %>
-                            <button onclick="adicionarAoCarrinho(<%= brinquedo.id %>, '<%= brinquedo.nome %>', <%= brinquedo.preco_diaria %>)" 
-                                    class="w-full bg-yellow-500 text-gray-900 py-2 rounded-lg hover:bg-yellow-600 transition-all">
-                                <i class="ri-shopping-cart-line"></i> Alugar
+                        <h3 class="font-bold text-lg mb-2"><%= brinquedo.nome %></h3>
+                        <p class="text-gray-600 text-sm mb-3"><%= brinquedo.descricao.substring(0, 80) %>...</p>
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-2xl font-bold text-blue-600">R$ <%= brinquedo.preco_diaria %></span>
+                            <span class="text-gray-500">/dia</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center">
+                                <button onclick="alterarQuantidade(this, -1)" class="bg-gray-200 px-2 py-1 rounded hover:bg-gray-300 transition">-</button>
+                                <span class="mx-3 quantidade-item">1</span>
+                                <button onclick="alterarQuantidade(this, 1)" class="bg-gray-200 px-2 py-1 rounded hover:bg-gray-300 transition">+</button>
+                            </div>
+                            <button onclick="adicionarAoCarrinho(this)" 
+                                    data-id="<%= brinquedo._id %>"
+                                    data-nome="<%= brinquedo.nome %>"
+                                    data-preco="<%= brinquedo.preco_diaria %>"
+                                    class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+                                Alugar
                             </button>
-                        <% } else if (!usuario) { %>
-                            <a href="/login" class="block w-full bg-gray-400 text-white py-2 rounded-lg text-center hover:bg-gray-500 transition-all">
-                                Faça login para alugar
-                            </a>
-                        <% } else if (usuario && usuario.tipo === 'admin') { %>
-                            <button disabled class="w-full bg-gray-400 text-white py-2 rounded-lg cursor-not-allowed">
-                                Modo Admin - Não pode alugar
-                            </button>
-                        <% } %>
+                        </div>
                     </div>
                 </div>
             <% }) %>
         <% } else { %>
-            <p class="text-center col-span-4 text-gray-500">Nenhum brinquedo encontrado.</p>
+            <div class="col-span-full text-center py-12">
+                <p class="text-gray-500">Nenhum brinquedo disponível no momento.</p>
+            </div>
         <% } %>
     </div>
 </section>
 
 <script>
-    function adicionarAoCarrinho(id, nome, preco) {
-        let carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
-        const itemExistente = carrinho.find(item => item.id === id);
-        
-        if (itemExistente) {
-            itemExistente.quantidade++;
-        } else {
-            carrinho.push({
-                id: id,
-                nome: nome,
-                preco_diaria: preco,
-                quantidade: 1
-            });
-        }
-        
-        localStorage.setItem('carrinho', JSON.stringify(carrinho));
-        
-        // Atualizar contador
-        const badge = document.getElementById('carrinhoCount');
-        if (badge) {
-            badge.textContent = carrinho.length;
-            badge.style.display = 'flex';
-        }
-        
-        alert(`${nome} adicionado ao carrinho!`);
+    // Função para alterar quantidade no card
+    function alterarQuantidade(botao, delta) {
+        const card = botao.closest('.brinquedo-item');
+        const spanQuantidade = card.querySelector('.quantidade-item');
+        let quantidade = parseInt(spanQuantidade.innerText);
+        quantidade += delta;
+        if (quantidade < 1) quantidade = 1;
+        spanQuantidade.innerText = quantidade;
     }
     
-    function buscarBrinquedos() {
-        const termo = document.getElementById('busca').value.toLowerCase();
-        const brinquedos = document.querySelectorAll('#listaBrinquedos > div');
+    // Função principal para adicionar ao carrinho
+    function adicionarAoCarrinho(botao) {
+        // Verificar se usuário está logado
+        <% if (!usuario) { %>
+            if (confirm('Você precisa estar logado para alugar brinquedos. Deseja fazer login?')) {
+                window.location.href = '/login';
+            }
+            return;
+        <% } %>
         
-        brinquedos.forEach(brinquedo => {
-            const nome = brinquedo.querySelector('h3').textContent.toLowerCase();
-            if (nome.includes(termo)) {
-                brinquedo.style.display = '';
+        // Pegar os dados do brinquedo
+        const card = botao.closest('.brinquedo-item');
+        const quantidade = parseInt(card.querySelector('.quantidade-item').innerText);
+        
+        const brinquedo = {
+            _id: botao.getAttribute('data-id'),
+            nome: botao.getAttribute('data-nome'),
+            preco_diaria: parseFloat(botao.getAttribute('data-preco')),
+            quantidade: quantidade
+        };
+        
+        // Pegar carrinho atual do localStorage
+        let carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
+        
+        // Verificar se o brinquedo já está no carrinho
+        const indexExistente = carrinho.findIndex(item => item._id === brinquedo._id);
+        
+        if (indexExistente !== -1) {
+            // Atualizar quantidade
+            carrinho[indexExistente].quantidade += brinquedo.quantidade;
+        } else {
+            // Adicionar novo item
+            carrinho.push(brinquedo);
+        }
+        
+        // Salvar no localStorage
+        localStorage.setItem('carrinho', JSON.stringify(carrinho));
+        
+        // Feedback visual
+        const originalText = botao.innerHTML;
+        botao.innerHTML = '✓ Adicionado!';
+        botao.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+        botao.classList.add('bg-green-600');
+        
+        setTimeout(() => {
+            botao.innerHTML = originalText;
+            botao.classList.remove('bg-green-600');
+            botao.classList.add('bg-blue-600', 'hover:bg-blue-700');
+        }, 1500);
+        
+        // Atualizar badge do carrinho no header
+        atualizarBadgeCarrinho();
+        
+        // Mostrar mensagem de sucesso
+        const totalItens = carrinho.reduce((sum, item) => sum + item.quantidade, 0);
+        console.log(`✅ Adicionado: ${brinquedo.nome} x${brinquedo.quantidade}. Total no carrinho: ${totalItens} itens`);
+        
+        // Opcional: perguntar se quer ir para o carrinho
+        if (confirm(`"${brinquedo.nome}" adicionado ao carrinho! (${quantidade} unidade(s))\n\nDeseja ir para o carrinho agora?`)) {
+            window.location.href = '/cliente/carrinho';
+        }
+    }
+    
+    // Função para atualizar o badge do carrinho
+    function atualizarBadgeCarrinho() {
+        const carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
+        const totalItens = carrinho.reduce((sum, item) => sum + item.quantidade, 0);
+        const badge = document.getElementById('carrinhoCount');
+        
+        if (badge) {
+            if (totalItens > 0) {
+                badge.innerText = totalItens;
+                badge.style.display = 'inline-block';
             } else {
-                brinquedo.style.display = 'none';
+                badge.style.display = 'none';
+            }
+        }
+    }
+    
+    // Busca de brinquedos
+    document.getElementById('busca').addEventListener('input', function(e) {
+        const termo = e.target.value.toLowerCase();
+        const itens = document.querySelectorAll('.brinquedo-item');
+        
+        itens.forEach(item => {
+            const nome = item.getAttribute('data-nome');
+            if (nome.includes(termo)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
             }
         });
-    }
+    });
+    
+    // Inicializar badges quando a página carregar
+    document.addEventListener('DOMContentLoaded', () => {
+        atualizarBadgeCarrinho();
+    });
 </script>
 
 <%- include('partials/footer.ejs') %>

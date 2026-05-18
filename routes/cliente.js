@@ -27,18 +27,40 @@ router.get('/carrinho', (req, res) => {
   res.render('cliente/carrinho');
 });
 
-// Finalizar pedido
+// Finalizar pedido - VERSÃO CORRIGIDA
 router.post('/finalizar-pedido', async (req, res) => {
   const { itens, dataInicio, dataFim, formaPagamento } = req.body;
+
+  // Validação inicial
+  if (!itens || itens.length === 0) {
+    return res.json({ success: false, message: 'Carrinho vazio' });
+  }
+
+  if (!dataInicio || !dataFim) {
+    return res.json({ success: false, message: 'Datas não informadas' });
+  }
 
   try {
     let valorTotal = 0;
     const itensFormatados = [];
 
     for (const item of itens) {
-      const brinquedo = await Brinquedo.findById(item.id);
+      // Aceita tanto id quanto _id
+      const brinquedoId = item.id || item._id;
+      
+      if (!brinquedoId) {
+        return res.json({ success: false, message: `Item ${item.nome} não tem ID válido` });
+      }
+
+      const brinquedo = await Brinquedo.findById(brinquedoId);
+      
       if (!brinquedo) {
         return res.json({ success: false, message: `Brinquedo ${item.nome} não encontrado` });
+      }
+
+      // Verificar estoque
+      if (brinquedo.quantidade_estoque < item.quantidade) {
+        return res.json({ success: false, message: `Estoque insuficiente para ${brinquedo.nome}. Disponível: ${brinquedo.quantidade_estoque}` });
       }
 
       const precoUnitario = brinquedo.preco_diaria;
@@ -56,6 +78,7 @@ router.post('/finalizar-pedido', async (req, res) => {
       usuario_id: req.session.usuario.id,
       data_inicio: new Date(dataInicio),
       data_fim: new Date(dataFim),
+      periodo_tipo: 'diaria',
       valor_total: valorTotal,
       forma_pagamento: formaPagamento,
       itens: itensFormatados,
@@ -64,13 +87,19 @@ router.post('/finalizar-pedido', async (req, res) => {
 
     await novoAluguel.save();
 
-    // Simular envio de email
-    console.log(`📧 Email de confirmação enviado para ${req.session.usuario.email}`);
+    // Atualizar estoque
+    for (const item of itensFormatados) {
+      await Brinquedo.findByIdAndUpdate(item.brinquedo_id, {
+        $inc: { quantidade_estoque: -item.quantidade }
+      });
+    }
 
-    res.json({ success: true });
+    console.log(`📧 Pedido #${novoAluguel._id} criado por ${req.session.usuario.email}`);
+    res.json({ success: true, message: 'Pedido realizado com sucesso!' });
+    
   } catch (error) {
-    console.error(error);
-    res.json({ success: false, message: 'Erro ao finalizar pedido' });
+    console.error('Erro ao finalizar pedido:', error);
+    res.json({ success: false, message: 'Erro interno ao processar pedido' });
   }
 });
 

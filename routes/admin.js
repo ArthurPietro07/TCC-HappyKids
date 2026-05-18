@@ -8,6 +8,8 @@ const router = express.Router();
 // Middlewares
 router.use(isAuthenticated);
 router.use(isAdmin);
+router.use(express.json());
+router.use(express.urlencoded({ extended: true }));
 
 // Dashboard
 router.get('/dashboard', async (req, res) => {
@@ -51,10 +53,10 @@ router.get('/dashboard', async (req, res) => {
     }
 });
 
-// CRUD Brinquedos
+// CRUD Brinquedos - VERSÃO CORRIGIDA
 router.get('/brinquedos', async (req, res) => {
     try {
-        const brinquedos = await Brinquedo.find();
+        const brinquedos = await Brinquedo.find().sort({ data_cadastro: -1 });
         res.render('admin/brinquedos', { brinquedos });
     } catch (error) {
         console.error(error);
@@ -64,39 +66,77 @@ router.get('/brinquedos', async (req, res) => {
 
 router.post('/brinquedos', async (req, res) => {
     try {
-        const brinquedo = new Brinquedo(req.body);
+        const brinquedo = new Brinquedo({
+            ...req.body,
+            disponivel: req.body.quantidade_estoque > 0
+        });
         await brinquedo.save();
-        res.status(201).json({ success: true });
+        res.status(201).json({ success: true, message: 'Brinquedo criado com sucesso' });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ success: false });
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
 router.get('/brinquedos/:id', async (req, res) => {
     try {
         const brinquedo = await Brinquedo.findById(req.params.id);
+        if (!brinquedo) {
+            return res.status(404).json({ error: 'Brinquedo não encontrado' });
+        }
         res.json(brinquedo);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Erro ao buscar brinquedo' });
     }
 });
 
 router.put('/brinquedos/:id', async (req, res) => {
     try {
-        await Brinquedo.findByIdAndUpdate(req.params.id, req.body);
-        res.json({ success: true });
+        const brinquedo = await Brinquedo.findByIdAndUpdate(
+            req.params.id, 
+            {
+                ...req.body,
+                disponivel: req.body.quantidade_estoque > 0
+            },
+            { new: true, runValidators: true }
+        );
+        
+        if (!brinquedo) {
+            return res.status(404).json({ success: false, error: 'Brinquedo não encontrado' });
+        }
+        
+        res.json({ success: true, message: 'Brinquedo atualizado com sucesso' });
     } catch (error) {
-        res.status(500).json({ success: false });
+        console.error(error);
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
 router.delete('/brinquedos/:id', async (req, res) => {
     try {
-        await Brinquedo.findByIdAndDelete(req.params.id);
-        res.json({ success: true });
+        // Verificar se o brinquedo está em algum aluguel ativo
+        const alugueisAtivos = await Aluguel.findOne({
+            'itens.brinquedo_id': req.params.id,
+            status: { $in: ['reservado', 'ativo'] }
+        });
+        
+        if (alugueisAtivos) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Não é possível excluir: brinquedo está em uso em aluguéis ativos' 
+            });
+        }
+        
+        const brinquedo = await Brinquedo.findByIdAndDelete(req.params.id);
+        if (!brinquedo) {
+            return res.status(404).json({ success: false, error: 'Brinquedo não encontrado' });
+        }
+        
+        res.json({ success: true, message: 'Brinquedo excluído com sucesso' });
     } catch (error) {
-        res.status(500).json({ success: false });
+        console.error(error);
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
@@ -108,6 +148,7 @@ router.get('/alugueis', async (req, res) => {
 
         const alugueis = await Aluguel.find(filter)
             .populate('usuario_id', 'nome')
+            .populate('itens.brinquedo_id', 'nome')
             .sort({ data_pedido: -1 });
 
         res.render('admin/alugueis', {
@@ -117,7 +158,8 @@ router.get('/alugueis', async (req, res) => {
                 data_inicio: a.data_inicio,
                 data_fim: a.data_fim,
                 valor_total: a.valor_total,
-                status: a.status
+                status: a.status,
+                itens: a.itens
             }))
         });
     } catch (error) {

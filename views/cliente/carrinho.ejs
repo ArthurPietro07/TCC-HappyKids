@@ -28,7 +28,7 @@
             
             <div class="mt-6">
                 <label class="block text-gray-700 mb-2">Data de Início</label>
-                <input type="date" id="dataInicio" class="w-full p-2 border rounded mb-4">
+                <input type="date" id="dataInicio" class="w-full p-2 border rounded mb-4" min="<%= new Date().toISOString().split('T')[0] %>">
                 
                 <label class="block text-gray-700 mb-2">Data de Fim</label>
                 <input type="date" id="dataFim" class="w-full p-2 border rounded mb-4">
@@ -40,7 +40,7 @@
                     <option value="pix">PIX</option>
                 </select>
                 
-                <button onclick="finalizarPedido()" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700">
+                <button onclick="finalizarPedido(event)" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition">
                     Finalizar Pedido
                 </button>
             </div>
@@ -56,7 +56,9 @@
         const container = document.getElementById('itensCarrinho');
         
         if (carrinho.length === 0) {
-            container.innerHTML = '<p class="text-center text-gray-500">Seu carrinho está vazio. <a href="/catalogo" class="text-blue-600">Ver brinquedos</a></p>';
+            container.innerHTML = '<p class="text-center text-gray-500">Seu carrinho está vazio. <a href="/catalogo" class="text-blue-600 hover:underline">Ver brinquedos</a></p>';
+            document.getElementById('subtotal').innerText = 'R$ 0,00';
+            document.getElementById('total').innerText = 'R$ 0,00';
             return;
         }
         
@@ -64,23 +66,24 @@
         let subtotal = 0;
         
         carrinho.forEach((item, index) => {
-            const itemTotal = item.preco_diaria * item.quantidade;
+            const preco = item.preco_diaria || 0;
+            const itemTotal = preco * item.quantidade;
             subtotal += itemTotal;
             
             html += `
                 <li class="py-4 flex justify-between items-center">
                     <div>
                         <h3 class="font-semibold">${item.nome}</h3>
-                        <p class="text-sm text-gray-600">R$ ${item.preco_diaria}/dia</p>
+                        <p class="text-sm text-gray-600">R$ ${preco.toFixed(2)}/dia</p>
                         <div class="flex items-center mt-2">
-                            <button onclick="alterarQuantidade(${index}, -1)" class="bg-gray-200 px-2 py-1 rounded">-</button>
+                            <button onclick="alterarQuantidade(${index}, -1)" class="bg-gray-200 px-2 py-1 rounded hover:bg-gray-300 transition">-</button>
                             <span class="mx-3">${item.quantidade}</span>
-                            <button onclick="alterarQuantidade(${index}, 1)" class="bg-gray-200 px-2 py-1 rounded">+</button>
+                            <button onclick="alterarQuantidade(${index}, 1)" class="bg-gray-200 px-2 py-1 rounded hover:bg-gray-300 transition">+</button>
                         </div>
                     </div>
                     <div class="text-right">
                         <p class="font-bold">R$ ${itemTotal.toFixed(2)}</p>
-                        <button onclick="removerItem(${index})" class="text-red-600 text-sm">Remover</button>
+                        <button onclick="removerItem(${index})" class="text-red-600 text-sm hover:text-red-800 transition">Remover</button>
                     </div>
                 </li>
             `;
@@ -111,47 +114,108 @@
         atualizarCarrinhoCount();
     }
     
-    function finalizarPedido() {
+    function atualizarCarrinhoCount() {
+        const carrinhoAtual = JSON.parse(localStorage.getItem('carrinho') || '[]');
+        const totalItens = carrinhoAtual.reduce((sum, item) => sum + item.quantidade, 0);
+        const badge = document.getElementById('carrinhoCount');
+        if (badge) {
+            badge.innerText = totalItens;
+            badge.style.display = totalItens > 0 ? 'inline-block' : 'none';
+        }
+    }
+    
+    async function finalizarPedido(event) {
         const dataInicio = document.getElementById('dataInicio').value;
         const dataFim = document.getElementById('dataFim').value;
         const formaPagamento = document.getElementById('formaPagamento').value;
         
         if (!dataInicio || !dataFim) {
-            alert('Selecione as datas de início e fim!');
+            alert('⚠️ Selecione as datas de início e fim!');
             return;
         }
         
         if (carrinho.length === 0) {
-            alert('Carrinho vazio!');
+            alert('⚠️ Carrinho vazio!');
             return;
         }
         
-        // Enviar para o backend
-        fetch('/cliente/finalizar-pedido', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                itens: carrinho,
-                dataInicio: dataInicio,
-                dataFim: dataFim,
-                formaPagamento: formaPagamento
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
+        // Validar datas
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        const inicio = new Date(dataInicio);
+        const fim = new Date(dataFim);
+        
+        if (inicio < hoje) {
+            alert('⚠️ A data de início não pode ser anterior a hoje!');
+            return;
+        }
+        
+        if (fim <= inicio) {
+            alert('⚠️ A data de fim deve ser posterior à data de início!');
+            return;
+        }
+        
+        // Formatar itens com o ID correto
+        const itensFormatados = carrinho.map(item => ({
+            id: item._id || item.id,
+            nome: item.nome,
+            quantidade: item.quantidade,
+            preco_diaria: item.preco_diaria
+        }));
+        
+        // Desabilitar botão para evitar duplo clique
+        const btn = event.target;
+        const originalText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = 'Processando...';
+        
+        try {
+            const response = await fetch('/cliente/finalizar-pedido', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    itens: itensFormatados,
+                    dataInicio: dataInicio,
+                    dataFim: dataFim,
+                    formaPagamento: formaPagamento
+                })
+            });
+            
+            const data = await response.json();
+            
             if (data.success) {
-                alert('Pedido finalizado com sucesso!');
+                alert('✅ Pedido finalizado com sucesso!');
                 localStorage.removeItem('carrinho');
                 window.location.href = '/cliente/meus-alugueis';
             } else {
-                alert('Erro: ' + data.message);
+                alert('❌ Erro: ' + (data.message || 'Não foi possível finalizar o pedido'));
+                btn.disabled = false;
+                btn.innerText = originalText;
             }
-        });
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('❌ Erro de conexão. Tente novamente.');
+            btn.disabled = false;
+            btn.innerText = originalText;
+        }
     }
     
-    document.addEventListener('DOMContentLoaded', carregarCarrinho);
+    // Evento para validar data fim quando data início mudar
+    document.getElementById('dataInicio').addEventListener('change', function() {
+        const dataFim = document.getElementById('dataFim');
+        if (dataFim.value && dataFim.value <= this.value) {
+            dataFim.value = '';
+            alert('A data de fim deve ser posterior à data de início!');
+        }
+        dataFim.min = this.value;
+    });
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        carregarCarrinho();
+        atualizarCarrinhoCount();
+    });
 </script>
 
 <%- include('../partials/footer.ejs') %>
