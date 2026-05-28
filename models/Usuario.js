@@ -26,6 +26,13 @@ const UsuarioSchema = new mongoose.Schema({
     data_cadastro: {
         type: Date,
         default: Date.now
+    },
+    // 🔧 NOVOS CAMPOS PARA RECUPERAÇÃO DE SENHA
+    resetToken: {
+        type: String
+    },
+    resetTokenExpiry: {
+        type: Date
     }
 });
 

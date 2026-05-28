@@ -18,6 +18,10 @@ const AluguelSchema = new mongoose.Schema({
         type: Date,
         required: true
     },
+    hora_entrega: {
+        type: String,
+        required: true
+    },
     periodo_tipo: {
         type: String,
         enum: ['diaria', 'semanal'],
@@ -29,21 +33,43 @@ const AluguelSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['reservado', 'ativo', 'concluido', 'atrasado'],
+        enum: ['reservado', 'ativo', 'concluido', 'atrasado', 'aguardando_pagamento', 'pago', 'cancelado'],
         default: 'reservado'
     },
     forma_pagamento: {
         type: String,
+        enum: ['dinheiro', 'cartao', 'pix', 'pagar_retirada'],
         required: true
+    },
+    pagamento_confirmado: {
+        type: Boolean,
+        default: false
+    },
+    data_pagamento: {
+        type: Date
+    },
+    endereco_entrega: {
+        type: String,
+        default: ''
     },
     itens: [{
         brinquedo_id: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Brinquedo'
+            ref: 'Brinquedo',
+            required: true
         },
-        quantidade: Number,
-        preco_unitario: Number
+        quantidade: {
+            type: Number,
+            required: true,
+            min: 1
+        },
+        preco_unitario: {
+            type: Number,
+            required: true
+        }
     }]
+}, {
+    timestamps: true
 });
 
 module.exports = mongoose.model('Aluguel', AluguelSchema);

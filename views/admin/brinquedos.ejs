@@ -1,240 +1,101 @@
 <%- include('../partials/admin-header.ejs') %>
-
-<div class="mb-8 flex justify-between items-center">
-    <h1 class="text-3xl font-bold">Gerenciar Brinquedos</h1>
-    <button onclick="abrirModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-        <i class="ri-add-line"></i> Novo Brinquedo
-    </button>
-</div>
-
-<!-- Lista de Brinquedos -->
-<div class="bg-white rounded-lg shadow-lg overflow-hidden">
+<div class="max-w-7xl mx-auto px-4 py-8 fade-in">
+  <div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold text-slate-800">Gerenciar Brinquedos</h1>
+    <button onclick="abrirModal()" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 transition font-medium shadow-md flex items-center gap-2"><i class="ri-add-line"></i> Novo Brinquedo</button>
+  </div>
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
     <div class="overflow-x-auto">
-        <table class="w-full">
-            <thead class="bg-gray-800 text-white">
-                <tr>
-                    <th class="p-3">ID</th>
-                    <th class="p-3">Imagem</th>
-                    <th class="p-3">Nome</th>
-                    <th class="p-3">Preço Diária</th>
-                    <th class="p-3">Preço Semanal</th>
-                    <th class="p-3">Estoque</th>
-                    <th class="p-3">Status</th>
-                    <th class="p-3">Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% if (brinquedos && brinquedos.length > 0) { %>
-                    <% brinquedos.forEach(brinquedo => { %>
-                        <tr class="border-b hover:bg-gray-50 transition">
-                            <td class="p-3"><%= brinquedo._id.toString().slice(-6) %></td>
-                            <td class="p-3">
-                                <img src="<%= brinquedo.imagem_url || '/uploads/placeholder.jpg' %>" class="w-12 h-12 object-cover rounded" onerror="this.src='/uploads/placeholder.jpg'">
-                            </td>
-                            <td class="p-3"><%= brinquedo.nome %></td>
-                            <td class="p-3">R$ <%= brinquedo.preco_diaria.toFixed(2) %></td>
-                            <td class="p-3">R$ <%= brinquedo.preco_semanal.toFixed(2) %></td>
-                            <td class="p-3"><%= brinquedo.quantidade_estoque %></td>
-                            <td class="p-3">
-                                <% if (brinquedo.disponivel) { %>
-                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm">Disponível</span>
-                                <% } else { %>
-                                    <span class="bg-red-100 text-red-800 px-2 py-1 rounded text-sm">Indisponível</span>
-                                <% } %>
-                            </td>
-                            <td class="p-3">
-                                <button onclick="editarBrinquedo('<%= brinquedo._id %>')" class="text-blue-600 hover:text-blue-800 mr-2 transition">
-                                    <i class="ri-edit-line"></i> Editar
-                                </button>
-                                <button onclick="excluirBrinquedo('<%= brinquedo._id %>')" class="text-red-600 hover:text-red-800 transition">
-                                    <i class="ri-delete-bin-line"></i> Excluir
-                                </button>
-                            </td>
-                        </tr>
-                    <% }) %>
-                <% } else { %>
-                    <tr>
-                        <td colspan="8" class="text-center p-8 text-gray-500">
-                            Nenhum brinquedo cadastrado. Clique em "Novo Brinquedo" para adicionar.
-                        </td>
-                    </tr>
-                <% } %>
-            </tbody>
-        </table>
+      <table class="w-full text-left">
+        <thead class="bg-slate-50 text-slate-500 text-xs uppercase"><tr><th class="p-4">ID</th><th class="p-4">Imagem</th><th class="p-4">Nome</th><th class="p-4">Preço/Dia</th><th class="p-4">Preço/Sem</th><th class="p-4">Estoque</th><th class="p-4">Status</th><th class="p-4">Ações</th></tr></thead>
+        <tbody class="divide-y divide-slate-100">
+          <% if (brinquedos && brinquedos.length > 0) { %>
+            <% brinquedos.forEach(brinquedo => { %>
+              <tr class="hover:bg-slate-50 transition">
+                <td class="p-4 font-mono text-sm"><%= brinquedo._id.toString().slice(-6) %></td>
+                <td class="p-4"><img src="<%= brinquedo.imagem_url || '/uploads/placeholder.jpg' %>" class="w-14 h-14 object-cover rounded-lg border border-slate-200" onerror="this.src='/uploads/placeholder.jpg'"></td>
+                <td class="p-4 font-semibold text-slate-800"><%= brinquedo.nome %></td>
+                <td class="p-4">R$ <%= brinquedo.preco_diaria.toFixed(2) %></td>
+                <td class="p-4">R$ <%= brinquedo.preco_semanal.toFixed(2) %></td>
+                <td class="p-4"><span class="font-bold text-slate-700"><%= brinquedo.quantidade_estoque %></span></td>
+                <td class="p-4"><% if (brinquedo.disponivel) { %><span class="badge badge-success">Disponível</span><% } else { %><span class="badge badge-danger">Indisponível</span><% } %></td>
+                <td class="p-4 space-x-3"><button onclick="editarBrinquedo('<%= brinquedo._id %>')" class="text-blue-600 hover:text-blue-800 font-medium transition"><i class="ri-edit-line"></i> Editar</button><button onclick="excluirBrinquedo('<%= brinquedo._id %>')" class="text-red-600 hover:text-red-800 font-medium transition"><i class="ri-delete-bin-line"></i> Excluir</button></td>
+              </tr>
+            <% }) %>
+          <% } else { %>
+            <tr><td colspan="8" class="text-center p-8 text-slate-400">Nenhum brinquedo cadastrado.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
     </div>
+  </div>
 </div>
 
-<!-- Modal para Adicionar/Editar Brinquedo -->
-<div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-lg p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <h2 id="modalTitle" class="text-2xl font-bold mb-4">Novo Brinquedo</h2>
-        <form id="formBrinquedo">
-            <input type="hidden" id="brinquedoId">
-            <div class="mb-4">
-                <label class="block mb-2 font-semibold">Nome *</label>
-                <input type="text" id="nome" required class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
-            <div class="mb-4">
-                <label class="block mb-2 font-semibold">Descrição *</label>
-                <textarea id="descricao" rows="3" required class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
-            </div>
-            <div class="mb-4">
-                <label class="block mb-2 font-semibold">Preço Diária (R$) *</label>
-                <input type="number" id="precoDiaria" step="0.01" required class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
-            <div class="mb-4">
-                <label class="block mb-2 font-semibold">Preço Semanal (R$) *</label>
-                <input type="number" id="precoSemanal" step="0.01" required class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
-            <div class="mb-4">
-                <label class="block mb-2 font-semibold">Quantidade em Estoque *</label>
-                <input type="number" id="estoque" required class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
-            <div class="mb-4">
-                <label class="block mb-2 font-semibold">URL da Imagem</label>
-                <input type="text" id="imagem" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="https://exemplo.com/imagem.jpg">
-                <p class="text-sm text-gray-500 mt-1">Deixe em branco para usar a imagem padrão</p>
-            </div>
-            <div class="flex justify-end space-x-2">
-                <button type="button" onclick="fecharModal()" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition">Cancelar</button>
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Salvar</button>
-            </div>
-        </form>
-    </div>
+<div id="modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+    <h2 id="modalTitle" class="text-xl font-bold mb-4">Novo Brinquedo</h2>
+    <form id="formBrinquedo" class="space-y-4">
+      <input type="hidden" id="brinquedoId">
+      <div><label class="block text-sm font-medium text-slate-700 mb-1">Nome *</label><input type="text" id="nome" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500"></div>
+      <div><label class="block text-sm font-medium text-slate-700 mb-1">Descrição *</label><textarea id="descricao" rows="3" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500"></textarea></div>
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="block text-sm font-medium text-slate-700 mb-1">Preço Diária *</label><input type="number" id="precoDiaria" step="0.01" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl"></div>
+        <div><label class="block text-sm font-medium text-slate-700 mb-1">Preço Semanal *</label><input type="number" id="precoSemanal" step="0.01" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl"></div>
+      </div>
+      <div><label class="block text-sm font-medium text-slate-700 mb-1">Estoque *</label><input type="number" id="estoque" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl"></div>
+      <div><label class="block text-sm font-medium text-slate-700 mb-1">URL da Imagem</label><input type="text" id="imagem" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl" placeholder="https://exemplo.com/imagem.jpg"><p class="text-xs text-slate-500 mt-1">Deixe em branco para usar padrão</p></div>
+      <div class="flex justify-end gap-3 pt-2"><button type="button" onclick="fecharModal()" class="px-4 py-2.5 bg-slate-100 rounded-xl hover:bg-slate-200 transition font-medium">Cancelar</button><button type="submit" class="px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-medium">Salvar</button></div>
+    </form>
+  </div>
 </div>
-
 <script>
-    function abrirModal() {
-        document.getElementById('modalTitle').innerText = 'Novo Brinquedo';
-        document.getElementById('formBrinquedo').reset();
-        document.getElementById('brinquedoId').value = '';
-        document.getElementById('modal').classList.remove('hidden');
-        document.getElementById('modal').classList.add('flex');
-    }
-    
-    function fecharModal() {
-        document.getElementById('modal').classList.add('hidden');
-        document.getElementById('modal').classList.remove('flex');
-    }
-    
-    function setLoading(button, isLoading) {
-        if (isLoading) {
-            button.disabled = true;
-            button.textContent = 'Salvando...';
-        } else {
-            button.disabled = false;
-            button.textContent = 'Salvar';
-        }
-    }
-    
-    document.getElementById('formBrinquedo').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        setLoading(submitBtn, true);
-        
-        const id = document.getElementById('brinquedoId').value;
-        const dados = {
-            nome: document.getElementById('nome').value,
-            descricao: document.getElementById('descricao').value,
-            preco_diaria: parseFloat(document.getElementById('precoDiaria').value),
-            preco_semanal: parseFloat(document.getElementById('precoSemanal').value),
-            quantidade_estoque: parseInt(document.getElementById('estoque').value),
-            imagem_url: document.getElementById('imagem').value || '/uploads/placeholder.jpg'
-        };
-        
-        const url = id ? `/admin/brinquedos/${id}` : '/admin/brinquedos';
-        const method = id ? 'PUT' : 'POST';
-        
-        try {
-            const response = await fetch(url, {
-                method: method,
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(dados)
-            });
-            
-            const result = await response.json();
-            
-            if (response.ok && result.success) {
-                alert(result.message || 'Brinquedo salvo com sucesso!');
-                location.reload();
-            } else {
-                alert('Erro: ' + (result.error || result.message || 'Erro ao salvar brinquedo'));
-            }
-        } catch (error) {
-            console.error('Erro:', error);
-            alert('Erro de conexão. Tente novamente.');
-        } finally {
-            setLoading(submitBtn, false);
-        }
-    });
-    
-    async function editarBrinquedo(id) {
-        // Mostrar loading visual
-        const btn = event.target.closest('button');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="ri-loader-4-line animate-spin"></i> Carregando...';
-        btn.disabled = true;
-        
-        try {
-            const response = await fetch(`/admin/brinquedos/${id}`);
-            if (!response.ok) throw new Error('Brinquedo não encontrado');
-            const data = await response.json();
-            
-            document.getElementById('brinquedoId').value = data._id;
-            document.getElementById('nome').value = data.nome;
-            document.getElementById('descricao').value = data.descricao;
-            document.getElementById('precoDiaria').value = data.preco_diaria;
-            document.getElementById('precoSemanal').value = data.preco_semanal;
-            document.getElementById('estoque').value = data.quantidade_estoque;
-            document.getElementById('imagem').value = data.imagem_url || '';
-            document.getElementById('modalTitle').innerText = 'Editar Brinquedo';
-            document.getElementById('modal').classList.remove('hidden');
-            document.getElementById('modal').classList.add('flex');
-        } catch (error) {
-            console.error('Erro:', error);
-            alert('Erro ao carregar dados do brinquedo: ' + error.message);
-        } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-    }
-    
-    async function excluirBrinquedo(id) {
-        if (!confirm('⚠️ Tem certeza que deseja excluir este brinquedo?\n\nIsso removerá permanentemente do sistema.')) {
-            return;
-        }
-        
-        const row = event.target.closest('tr');
-        const originalBg = row.style.backgroundColor;
-        row.style.backgroundColor = '#fef2f2';
-        row.style.opacity = '0.7';
-        
-        try {
-            const response = await fetch(`/admin/brinquedos/${id}`, {method: 'DELETE'});
-            const result = await response.json();
-            
-            if (response.ok && result.success) {
-                alert('✅ Brinquedo excluído com sucesso!');
-                location.reload();
-            } else {
-                alert('❌ Erro: ' + (result.error || 'Não foi possível excluir'));
-                row.style.backgroundColor = originalBg;
-                row.style.opacity = '1';
-            }
-        } catch (error) {
-            console.error('Erro:', error);
-            alert('❌ Erro de conexão. Tente novamente.');
-            row.style.backgroundColor = originalBg;
-            row.style.opacity = '1';
-        }
-    }
-    
-    // Fechar modal clicando fora
-    document.getElementById('modal').addEventListener('click', (e) => {
-        if (e.target === document.getElementById('modal')) {
-            fecharModal();
-        }
-    });
+function abrirModal() { document.getElementById('modalTitle').innerText = 'Novo Brinquedo'; document.getElementById('formBrinquedo').reset(); document.getElementById('brinquedoId').value = ''; document.getElementById('modal').classList.remove('hidden'); document.getElementById('modal').classList.add('flex'); }
+function fecharModal() { document.getElementById('modal').classList.add('hidden'); document.getElementById('modal').classList.remove('flex'); }
+function setLoading(button, isLoading) { if (isLoading) { button.disabled = true; button.textContent = 'Salvando...'; } else { button.disabled = false; button.textContent = 'Salvar'; } }
+document.getElementById('formBrinquedo').addEventListener('submit', async (e) => {
+e.preventDefault();
+const submitBtn = e.target.querySelector('button[type="submit"]');
+setLoading(submitBtn, true);
+const id = document.getElementById('brinquedoId').value;
+const dados = { nome: document.getElementById('nome').value, descricao: document.getElementById('descricao').value, preco_diaria: parseFloat(document.getElementById('precoDiaria').value), preco_semanal: parseFloat(document.getElementById('precoSemanal').value), quantidade_estoque: parseInt(document.getElementById('estoque').value), imagem_url: document.getElementById('imagem').value || '/uploads/placeholder.jpg' };
+const url = id ? `/admin/brinquedos/${id}` : '/admin/brinquedos';
+const method = id ? 'PUT' : 'POST';
+try {
+const response = await fetch(url, { method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados) });
+const result = await response.json();
+if (response.ok && result.success) { alert(result.message || 'Brinquedo salvo com sucesso!'); location.reload(); } else { alert('Erro: ' + (result.error || result.message || 'Erro ao salvar brinquedo')); }
+} catch (error) { console.error('Erro:', error); alert('Erro de conexão. Tente novamente.'); } finally { setLoading(submitBtn, false); }
+});
+async function editarBrinquedo(id) {
+const btn = event.target.closest('button');
+const originalText = btn.innerHTML;
+btn.innerHTML = '<i class="ri-loader-4-line animate-spin"></i> Carregando...'; btn.disabled = true;
+try {
+const response = await fetch(`/admin/brinquedos/${id}`);
+if (!response.ok) throw new Error('Brinquedo não encontrado');
+const data = await response.json();
+document.getElementById('brinquedoId').value = data._id;
+document.getElementById('nome').value = data.nome;
+document.getElementById('descricao').value = data.descricao;
+document.getElementById('precoDiaria').value = data.preco_diaria;
+document.getElementById('precoSemanal').value = data.preco_semanal;
+document.getElementById('estoque').value = data.quantidade_estoque;
+document.getElementById('imagem').value = data.imagem_url || '';
+document.getElementById('modalTitle').innerText = 'Editar Brinquedo';
+document.getElementById('modal').classList.remove('hidden');
+document.getElementById('modal').classList.add('flex');
+} catch (error) { console.error('Erro:', error); alert('Erro ao carregar dados do brinquedo: ' + error.message); } finally { btn.innerHTML = originalText; btn.disabled = false; }
+}
+async function excluirBrinquedo(id) {
+if (!confirm('⚠️ Tem certeza que deseja excluir este brinquedo?\nIsso removerá permanentemente do sistema.')) return;
+const row = event.target.closest('tr');
+row.style.opacity = '0.5';
+try {
+const response = await fetch(`/admin/brinquedos/${id}`, {method: 'DELETE'});
+const result = await response.json();
+if (response.ok && result.success) { alert('✅ Brinquedo excluído com sucesso!'); location.reload(); } else { alert('❌ Erro: ' + (result.error || 'Não foi possível excluir')); row.style.opacity = '1'; }
+} catch (error) { console.error('Erro:', error); alert('❌ Erro de conexão.'); row.style.opacity = '1'; }
+}
+document.getElementById('modal').addEventListener('click', (e) => { if (e.target === document.getElementById('modal')) fecharModal(); });
 </script>
-
 <%- include('../partials/admin-footer.ejs') %>

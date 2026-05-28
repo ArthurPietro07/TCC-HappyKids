@@ -15,7 +15,8 @@ const BrinquedoSchema = new mongoose.Schema({
     },
     quantidade_estoque: {
         type: Number,
-        default: 1
+        default: 1,
+        min: 0
     },
     preco_diaria: {
         type: Number,
@@ -34,5 +35,8 @@ const BrinquedoSchema = new mongoose.Schema({
         default: Date.now
     }
 });
+
+// Brinquedo sempre visível, mesmo com estoque 0
+// A validação será feita na hora do aluguel
 
 module.exports = mongoose.model('Brinquedo', BrinquedoSchema);

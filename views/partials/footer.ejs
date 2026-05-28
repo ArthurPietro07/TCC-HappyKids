@@ -1,71 +1,61 @@
-</main> <!-- ⭐ FECHA O MAIN QUE FOI ABERTO NO HEADER -->
-
-<!-- Footer -->
-<footer class="bg-gray-800 text-white mt-16">
+</main>
+<footer class="bg-slate-900 text-slate-300 mt-auto">
     <div class="max-w-7xl mx-auto px-4 py-12">
         <div class="grid md:grid-cols-4 gap-8">
             <div>
-                <div class="flex items-center space-x-2 mb-4">
-                    <i class="ri-balloon-fill text-2xl text-yellow-500"></i>
-                    <span class="text-xl font-bold">Happy Kids</span>
-                </div>
-                <p class="text-gray-400">A alegria do seu filho é nossa prioridade!</p>
+                <div class="flex items-center gap-2 mb-4 text-white"><i
+                        class="ri-balloon-fill text-2xl text-amber-400"></i><span
+                        class="text-xl font-bold">HappyKids</span></div>
+                <p class="text-sm leading-relaxed">A alegria do seu filho é nossa prioridade! Brinquedos higienizados,
+                    entrega rápida e suporte dedicado.</p>
             </div>
             <div>
-                <h4 class="text-lg font-semibold mb-4">Links Rápidos</h4>
-                <ul class="space-y-2">
-                    <li><a href="/" class="text-gray-400 hover:text-white">Início</a></li>
-                    <li><a href="/catalogo" class="text-gray-400 hover:text-white">Catálogo</a></li>
-                    <li><a href="/sobre" class="text-gray-400 hover:text-white">Sobre Nós</a></li>
+                <h4 class="text-white font-semibold mb-4">Links Rápidos</h4>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="/" class="hover:text-amber-400 transition">Início</a></li>
+                    <li><a href="/catalogo" class="hover:text-amber-400 transition">Catálogo</a></li>
+                    <li><a href="/sobre" class="hover:text-amber-400 transition">Sobre Nós</a></li>
                 </ul>
             </div>
             <div>
-                <h4 class="text-lg font-semibold mb-4">Contato</h4>
-                <ul class="space-y-2 text-gray-400">
-                    <li><i class="ri-phone-line"></i> (11) 99999-9999</li>
-                    <li><i class="ri-mail-line"></i> contato@happykids.com</li>
-                    <li><i class="ri-map-pin-line"></i> São Paulo - SP</li>
+                <h4 class="text-white font-semibold mb-4">Contato</h4>
+                <ul class="space-y-2 text-sm">
+                    <li class="flex items-center gap-2"><i class="ri-phone-line text-amber-400"></i> (11) 99999-9999
+                    </li>
+                    <li class="flex items-center gap-2"><i class="ri-mail-line text-amber-400"></i>
+                        contato@happykids.com</li>
                 </ul>
             </div>
             <div>
-                <h4 class="text-lg font-semibold mb-4">Redes Sociais</h4>
-                <div class="flex space-x-4">
-                    <a href="#" class="text-2xl text-gray-400 hover:text-white"><i class="ri-instagram-line"></i></a>
-                    <a href="#" class="text-2xl text-gray-400 hover:text-white"><i class="ri-facebook-line"></i></a>
-                    <a href="#" class="text-2xl text-gray-400 hover:text-white"><i class="ri-whatsapp-line"></i></a>
+                <h4 class="text-white font-semibold mb-4">Redes Sociais</h4>
+                <div class="flex gap-4">
+                    <a href="#"
+                        class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-amber-500 hover:text-white transition"><i
+                            class="ri-instagram-line"></i></a>
+                    <a href="#"
+                        class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-amber-500 hover:text-white transition"><i
+                            class="ri-facebook-line"></i></a>
+                    <a href="#"
+                        class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-amber-500 hover:text-white transition"><i
+                            class="ri-whatsapp-line"></i></a>
                 </div>
             </div>
         </div>
-        <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 Happy Kids - Todos os direitos reservados</p>
-        </div>
+        <div class="border-t border-slate-800 mt-8 pt-6 text-center text-xs text-slate-500">&copy; <%= new
+                Date().getFullYear() %> HappyKids. Todos os direitos reservados.</div>
     </div>
 </footer>
-
 <script>
-    // Atualizar contador do carrinho
+    const menuBtn = document.getElementById('menuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    if (menuBtn) menuBtn.addEventListener('click', () => mobileMenu.classList.toggle('open'));
     function atualizarCarrinhoCount() {
         const carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
-        const count = carrinho.length;
+        const count = carrinho.reduce((s, i) => s + i.quantidade, 0);
         const badge = document.getElementById('carrinhoCount');
-        if (badge) {
-            badge.textContent = count;
-            badge.style.display = count > 0 ? 'flex' : 'none';
-        }
+        if (badge) { badge.textContent = count; badge.style.display = count > 0 ? 'flex' : 'none'; }
     }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        atualizarCarrinhoCount();
-
-        // Mobile menu toggle
-        const menuBtn = document.getElementById('menuBtn');
-        const mobileMenu = document.getElementById('mobileMenu');
-        if (menuBtn) {
-            menuBtn.addEventListener('click', () => {
-                mobileMenu.classList.toggle('hidden');
-            });
-        }
-    });
+    document.addEventListener('DOMContentLoaded', atualizarCarrinhoCount);
 </script>
 </body>
 

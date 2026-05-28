@@ -1,113 +1,80 @@
 <%- include('partials/header.ejs') %>
-
-<!-- Hero Section -->
-<section class="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-20">
-    <div class="max-w-7xl mx-auto px-4 text-center">
-        <h1 class="text-5xl font-bold mb-6">Bem-vindo à Happy Kids!</h1>
-        <p class="text-xl mb-8">A maior variedade de brinquedos para locação do Brasil</p>
-        <a href="/catalogo" class="bg-yellow-500 text-gray-900 px-8 py-3 rounded-lg font-semibold hover:bg-yellow-400 transition-all inline-flex items-center">
-            Ver Brinquedos <i class="ri-arrow-right-line ml-2"></i>
-        </a>
+<section class="bg-gradient-to-br from-blue-600 to-indigo-700 text-white py-20 relative overflow-hidden">
+  <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+  <div class="max-w-7xl mx-auto px-4 relative z-10 text-center fade-in">
+    <span class="inline-block px-4 py-1 bg-white/20 rounded-full text-sm font-medium mb-4 backdrop-blur-sm">✨ Novo: Brinquedos Educativos Disponíveis</span>
+    <h1 class="text-4xl md:text-6xl font-bold mb-6 leading-tight">Diversão que transforma<br>momentos em memórias</h1>
+    <p class="text-lg md:text-xl text-blue-100 mb-8 max-w-2xl mx-auto">Aluguel de brinquedos higienizados, seguros e prontos para entregar alegria. Escolha, reserve e receba em casa.</p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <a href="/catalogo" class="bg-amber-400 text-slate-900 px-8 py-4 rounded-xl font-bold hover:bg-amber-300 transition shadow-lg hover:scale-105 transform">📦 Ver Catálogo</a>
+      <a href="/cadastro" class="bg-white/10 border border-white/30 backdrop-blur-md px-8 py-4 rounded-xl font-bold hover:bg-white/20 transition">Criar Conta</a>
     </div>
+  </div>
 </section>
 
-<!-- Diferenciais -->
-<section class="py-16">
-    <div class="max-w-7xl mx-auto px-4">
-        <h2 class="text-3xl font-bold text-center mb-12">Por que escolher a Happy Kids?</h2>
-        <div class="grid md:grid-cols-3 gap-8">
-            <div class="text-center p-6 bg-white rounded-lg shadow-lg">
-                <i class="ri-truck-line text-5xl text-blue-600 mb-4"></i>
-                <h3 class="text-xl font-semibold mb-2">Entrega Rápida</h3>
-                <p class="text-gray-600">Entregamos em até 24h na Grande São Paulo</p>
+<section class="py-16 bg-white">
+  <div class="max-w-7xl mx-auto px-4">
+    <h2 class="text-3xl font-bold text-center mb-12 text-slate-800">Por que a HappyKids?</h2>
+    <div class="grid md:grid-cols-3 gap-8">
+      <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover-card">
+        <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-4 text-2xl">🚚</div>
+        <h3 class="text-xl font-semibold mb-2">Entrega Rápida</h3>
+        <p class="text-slate-600">Receba em até 24h na Grande SP. Acompanhe seu pedido em tempo real.</p>
+      </div>
+      <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover-card">
+        <div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center mb-4 text-2xl">🧼</div>
+        <h3 class="text-xl font-semibold mb-2">100% Higienizados</h3>
+        <p class="text-slate-600">Protocolo rigoroso de limpeza e sanitização antes de cada entrega.</p>
+      </div>
+      <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover-card">
+        <div class="w-14 h-14 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center mb-4 text-2xl">🤝</div>
+        <h3 class="text-xl font-semibold mb-2">Suporte Humanizado</h3>
+        <p class="text-slate-600">Atendimento via WhatsApp e telefone. Estamos aqui para ajudar.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="py-16 bg-slate-50">
+  <div class="max-w-7xl mx-auto px-4">
+    <h2 class="text-3xl font-bold text-center mb-12 text-slate-800">Destaques do Mês</h2>
+    <div class="grid md:grid-cols-4 gap-6">
+      <% if (brinquedos && brinquedos.length > 0) { %>
+        <% brinquedos.slice(0, 4).forEach(brinquedo => { %>
+          <div class="bg-white rounded-2xl overflow-hidden border border-slate-100 hover-card fade-in">
+            <img src="<%= brinquedo.imagem_url || '/uploads/placeholder.jpg' %>" alt="<%= brinquedo.nome %>" class="w-full h-48 object-cover">
+            <div class="p-5">
+              <h3 class="text-lg font-bold mb-1 text-slate-800"><%= brinquedo.nome %></h3>
+              <p class="text-slate-500 text-sm mb-3 line-clamp-2"><%= brinquedo.descricao.substring(0, 60) %>...</p>
+              <div class="flex items-center justify-between">
+                <span class="text-xl font-bold text-blue-600">R$ <%= brinquedo.preco_diaria %><span class="text-sm text-slate-400 font-normal">/dia</span></span>
+                <a href="/catalogo" class="text-sm font-medium text-blue-600 hover:text-blue-800">Ver mais →</a>
+              </div>
             </div>
-            <div class="text-center p-6 bg-white rounded-lg shadow-lg">
-                <i class="ri-shield-check-line text-5xl text-blue-600 mb-4"></i>
-                <h3 class="text-xl font-semibold mb-2">Brinquedos Higienizados</h3>
-                <p class="text-gray-600">Limpeza e sanitização garantidas</p>
-            </div>
-            <div class="text-center p-6 bg-white rounded-lg shadow-lg">
-                <i class="ri-customer-service-line text-5xl text-blue-600 mb-4"></i>
-                <h3 class="text-xl font-semibold mb-2">Suporte 24/7</h3>
-                <p class="text-gray-600">Atendimento sempre disponível</p>
-            </div>
+          </div>
+        <% }) %>
+      <% } else { %>
+        <p class="text-center col-span-4 text-slate-500 py-8">Carregando brinquedos...</p>
+      <% } %>
+    </div>
+  </div>
+</section>
+
+<section class="py-16 bg-white">
+  <div class="max-w-7xl mx-auto px-4">
+    <h2 class="text-3xl font-bold text-center mb-12 text-slate-800">O que nossos clientes dizem</h2>
+    <div class="grid md:grid-cols-3 gap-8">
+      <% ['Ana Silva', 'Carlos Mendes', 'Patrícia Lima'].forEach((nome, i) => { %>
+      <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover-card">
+        <i class="ri-double-quotes-l text-4xl text-blue-200 mb-4 block"></i>
+        <p class="text-slate-600 mb-4 italic">"<%= i===0?'Excelente serviço! Meu filho amou o pula-pula. Super recomendo!':i===1?'Brinquedos muito bem conservados e atendimento super atencioso.':'Preços justos e entrega no prazo. Vou alugar novamente!' %>"</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 <%= ['bg-blue-100 text-blue-600','bg-emerald-100 text-emerald-600','bg-amber-100 text-amber-600'][i] %> rounded-full flex items-center justify-center font-bold"><%= nome.charAt(0)+nome.split(' ')[1].charAt(0) %></div>
+          <div><p class="font-semibold text-slate-800"><%= nome %></p><div class="text-amber-400 text-sm"><i class="ri-star-fill"></i><i class="ri-star-fill"></i><i class="ri-star-fill"></i><i class="ri-star-fill"></i><%= i===1?'<i class="ri-star-half-fill"></i>':'<i class="ri-star-fill"></i>' %></div></div>
         </div>
+      </div>
+      <% }) %>
     </div>
+  </div>
 </section>
-
-<!-- Brinquedos em Destaque -->
-<section class="bg-gray-100 py-16">
-    <div class="max-w-7xl mx-auto px-4">
-        <h2 class="text-3xl font-bold text-center mb-12">Brinquedos em Destaque</h2>
-        <div class="grid md:grid-cols-4 gap-6">
-            <% if (brinquedos && brinquedos.length > 0) { %>
-                <% brinquedos.slice(0, 4).forEach(brinquedo => { %>
-                    <div class="bg-white rounded-lg shadow-lg overflow-hidden hover-scale transition-all">
-                        <img src="<%= brinquedo.imagem_url || '/uploads/placeholder.jpg' %>" alt="<%= brinquedo.nome %>" class="w-full h-48 object-cover">
-                        <div class="p-4">
-                            <h3 class="text-lg font-semibold mb-2"><%= brinquedo.nome %></h3>
-                            <p class="text-gray-600 text-sm mb-2"><%= brinquedo.descricao.substring(0, 60) %>...</p>
-                            <p class="text-blue-600 font-bold">R$ <%= brinquedo.preco_diaria %>/dia</p>
-                            <a href="/catalogo" class="mt-3 inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">Ver Detalhes</a>
-                        </div>
-                    </div>
-                <% }) %>
-            <% } else { %>
-                <p class="text-center col-span-4">Carregando brinquedos...</p>
-            <% } %>
-        </div>
-    </div>
-</section>
-
-<!-- Depoimentos -->
-<section class="py-16">
-    <div class="max-w-7xl mx-auto px-4">
-        <h2 class="text-3xl font-bold text-center mb-12">O que nossos clientes dizem</h2>
-        <div class="grid md:grid-cols-3 gap-8">
-            <div class="bg-white p-6 rounded-lg shadow-lg">
-                <i class="ri-double-quotes-L text-4xl text-gray-300"></i>
-                <p class="text-gray-600 mt-4">"Excelente serviço! Meu filho amou o pula-pula. Super recomendo!"</p>
-                <div class="mt-4">
-                    <p class="font-semibold">Ana Silva</p>
-                    <div class="text-yellow-500">
-                        <i class="ri-star-fill"></i>
-                        <i class="ri-star-fill"></i>
-                        <i class="ri-star-fill"></i>
-                        <i class="ri-star-fill"></i>
-                        <i class="ri-star-fill"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow-lg">
-                <i class="ri-double-quotes-L text-4xl text-gray-300"></i>
-                <p class="text-gray-600 mt-4">"Brinquedos muito bem conservados e atendimento super atencioso."</p>
-                <div class="mt-4">
-                    <p class="font-semibold">Carlos Mendes</p>
-                    <div class="text-yellow-500">
-                        <i class="ri-star-fill"></i>
-                        <i class="ri-star-fill"></i>
-                        <i class="ri-star-fill"></i>
-                        <i class="ri-star-fill"></i>
-                        <i class="ri-star-half-fill"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow-lg">
-                <i class="ri-double-quotes-L text-4xl text-gray-300"></i>
-                <p class="text-gray-600 mt-4">"Preços justos e entrega no prazo. Vou alugar novamente!"</p>
-                <div class="mt-4">
-                    <p class="font-semibold">Patrícia Lima</p>
-                    <div class="text-yellow-500">
-                        <i class="ri-star-fill"></i>
-                        <i class="ri-star-fill"></i>
-                        <i class="ri-star-fill"></i>
-                        <i class="ri-star-fill"></i>
-                        <i class="ri-star-fill"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
 <%- include('partials/footer.ejs') %>

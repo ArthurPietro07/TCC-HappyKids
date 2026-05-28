@@ -1,83 +1,178 @@
 <%- include('../partials/admin-header.ejs') %>
-
-<div class="mb-8">
-    <h1 class="text-3xl font-bold">Gerenciar Aluguéis</h1>
-</div>
-
-<!-- Filtros -->
-<div class="bg-white p-4 rounded-lg shadow-md mb-6">
-    <select id="filtroStatus" class="p-2 border rounded" onchange="filtrarAlugueis()">
-        <option value="todos">Todos</option>
-        <option value="reservado">Reservados</option>
-        <option value="ativo">Ativos</option>
-        <option value="concluido">Concluídos</option>
-    </select>
-</div>
-
-<!-- Lista de Aluguéis -->
-<div class="bg-white rounded-lg shadow-lg overflow-hidden">
-    <table class="w-full">
-        <thead class="bg-gray-800 text-white">
-            <tr>
-                <th class="p-3">ID</th>
-                <th class="p-3">Cliente</th>
-                <th class="p-3">Período</th>
-                <th class="p-3">Valor</th>
-                <th class="p-3">Status</th>
-                <th class="p-3">Ações</th>
-            </tr>
-        </thead>
-        <tbody id="tabelaAlugueis">
-            <% if (alugueis && alugueis.length > 0) { %>
-                <% alugueis.forEach(aluguel => { %>
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="p-3">#<%= aluguel.id %></td>
-                        <td class="p-3"><%= aluguel.usuario_nome %></td>
-                        <td class="p-3"><%= new Date(aluguel.data_inicio).toLocaleDateString() %> - <%= new Date(aluguel.data_fim).toLocaleDateString() %></td>
-                        <td class="p-3">R$ <%= aluguel.valor_total %></td>
-                        <td class="p-3">
-                            <select onchange="alterarStatus(<%= aluguel.id %>, this.value)" class="p-1 rounded border">
-                                <option value="reservado" <%= aluguel.status === 'reservado' ? 'selected' : '' %>>Reservado</option>
-                                <option value="ativo" <%= aluguel.status === 'ativo' ? 'selected' : '' %>>Ativo</option>
-                                <option value="concluido" <%= aluguel.status === 'concluido' ? 'selected' : '' %>>Concluído</option>
-                            </select>
-                        </td>
-                        <td class="p-3">
-                            <button onclick="verDetalhes(<%= aluguel.id %>)" class="text-blue-600">Detalhes</button>
-                        </td>
-                    </tr>
-                <% }) %>
-            <% } else { %>
-                <tr><td colspan="6" class="text-center p-8">Nenhum aluguel encontrado</td></tr>
-            <% } %>
+<div class="max-w-7xl mx-auto px-4 py-8 fade-in">
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <h1 class="text-3xl font-bold text-slate-800">📝 Gerenciar Aluguéis</h1>
+    <div class="flex flex-wrap gap-2">
+      <a href="/admin/alugueis" class="px-3 py-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition text-sm font-medium">📋 Todos</a>
+      <a href="/admin/alugueis?status=reservado" class="px-3 py-2 bg-yellow-100 text-yellow-800 rounded-lg hover:bg-yellow-200 transition text-sm font-medium">📅 Reservados</a>
+      <a href="/admin/alugueis?status=ativo" class="px-3 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition text-sm font-medium">✅ Ativos</a>
+      <a href="/admin/alugueis?status=aguardando_pagamento" class="px-3 py-2 bg-orange-100 text-orange-800 rounded-lg hover:bg-orange-200 transition text-sm font-medium">⏳ Aguardando</a>
+      <a href="/admin/alugueis?status=pago" class="px-3 py-2 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition text-sm font-medium">💰 Pagos</a>
+      <a href="/admin/alugueis?status=cancelado" class="px-3 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition text-sm font-medium">❌ Cancelados</a>
+    </div>
+  </div>
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left">
+        <thead class="bg-slate-50 text-slate-500 text-xs uppercase"><tr><th class="p-4">Pedido</th><th class="p-4">Cliente</th><th class="p-4">Brinquedo(s)</th><th class="p-4">Período</th><th class="p-4">Valor</th><th class="p-4">Pagamento</th><th class="p-4">Endereço</th><th class="p-4">Status</th><th class="p-4">Ações</th></tr></thead>
+        <tbody class="divide-y divide-slate-100">
+          <% if (alugueis && alugueis.length > 0) { %>
+            <% alugueis.forEach(aluguel => { %>
+              <tr class="hover:bg-slate-50 transition">
+                <td class="p-4 font-medium text-slate-800">#<%= aluguel.id.toString().slice(-6) %></td>
+                <td class="p-4"><button onclick="verDetalhesCliente('<%= aluguel.id %>')" class="text-blue-600 hover:text-blue-800 hover:underline transition">📋 <%= aluguel.usuario_nome %></button></td>
+                <td class="p-4"><ul class="text-sm text-slate-600 space-y-1"><% aluguel.itens.forEach(item => { %><li><%= item.brinquedo_id?.nome || 'Brinquedo' %> x<%= item.quantidade %></li><% }) %></ul></td>
+                <td class="p-4 text-sm text-slate-500"><%= new Date(aluguel.data_inicio).toLocaleDateString() %> → <%= new Date(aluguel.data_fim).toLocaleDateString() %></td>
+                <td class="p-4 font-semibold text-slate-800">R$ <%= aluguel.valor_total.toFixed(2) %></td>
+                <td class="p-4 text-sm"><% if (aluguel.forma_pagamento === 'dinheiro') { %><span class="text-yellow-600">💰 Dinheiro</span><% } else if (aluguel.forma_pagamento === 'pix') { %><span class="text-green-600">📱 PIX</span><% } else if (aluguel.forma_pagamento === 'cartao') { %><span class="text-blue-600">💳 Cartão</span><% } else { %><span class="text-gray-600">🏪 Retirada</span><% } %><% if (aluguel.pagamento_confirmado) { %><span class="block text-xs text-green-600 mt-1">✓ Pago</span><% } %></td>
+                <td class="p-4 text-sm text-slate-500"><%= aluguel.endereco_entrega ? aluguel.endereco_entrega.substring(0, 30) + '...' : 'Não informado' %></td>
+                <td class="p-4"><% if (aluguel.status === 'cancelado') { %><span class="badge badge-gray">❌ Cancelado</span><% } else if (aluguel.status === 'reservado') { %><span class="badge badge-warning">📅 Reservado</span><% } else if (aluguel.status === 'ativo') { %><span class="badge badge-success">✅ Ativo</span><% } else if (aluguel.status === 'concluido') { %><span class="badge badge-info">✔️ Concluído</span><% } else if (aluguel.status === 'atrasado') { %><span class="badge badge-danger">⚠️ Atrasado</span><% } else if (aluguel.status === 'aguardando_pagamento') { %><span class="badge badge-warning">⏳ Aguardando</span><% } else if (aluguel.status === 'pago') { %><span class="badge badge-success">💰 Pago</span><% } %></td>
+                <td class="p-4 space-y-2"><% if (!aluguel.pagamento_confirmado && aluguel.status !== 'cancelado' && aluguel.status !== 'concluido') { %><% if (aluguel.forma_pagamento === 'dinheiro' || aluguel.forma_pagamento === 'pagar_retirada') { %><button onclick="confirmarPagamento('<%= aluguel.id %>')" class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-emerald-700 transition w-full">💰 Confirmar</button><% } %><% if (aluguel.forma_pagamento === 'cartao' || aluguel.forma_pagamento === 'pix') { %><button onclick="marcarComoPago('<%= aluguel.id %>')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700 transition w-full">💳 Marcar Pago</button><% } %><% } %><% if (aluguel.status !== 'cancelado' && aluguel.status !== 'concluido') { %><button onclick="cancelarPedido('<%= aluguel.id %>')" class="bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-red-700 transition w-full">❌ Cancelar</button><% } %><button onclick="verDetalhes('<%= aluguel.id %>')" class="bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-sm hover:bg-slate-300 transition w-full">🔍 Detalhes</button></td>
+              </tr>
+            <% }) %>
+          <% } else { %>
+            <tr><td colspan="9" class="text-center p-8 text-slate-400">📭 Nenhum aluguel encontrado.</td></tr>
+          <% } %>
         </tbody>
-    </table>
+      </table>
+    </div>
+  </div>
 </div>
 
+<div id="modalCliente" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6"><h2 class="text-xl font-bold mb-4">👤 Detalhes do Cliente</h2><div id="detalhesClienteConteudo"></div><div class="mt-4 flex justify-end"><button onclick="fecharModalCliente()" class="px-4 py-2 bg-slate-100 rounded-lg hover:bg-slate-200">Fechar</button></div></div>
+</div>
+<div id="modalDetalhes" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 max-h-[80vh] overflow-y-auto"><h2 class="text-xl font-bold mb-4">📋 Detalhes do Aluguel</h2><div id="detalhesConteudo"></div><div class="mt-4 flex justify-end"><button onclick="fecharModalDetalhes()" class="px-4 py-2 bg-slate-100 rounded-lg hover:bg-slate-200">Fechar</button></div></div>
+</div>
 <script>
-    function alterarStatus(id, novoStatus) {
-        fetch(`/admin/alugueis/${id}/status`, {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({status: novoStatus})
-        }).then(res => {
-            if (res.ok) {
-                alert('Status atualizado!');
-                location.reload();
-            }
-        });
-    }
-    
-    function verDetalhes(id) {
-        alert(`Detalhes do aluguel #${id}\nImplementar modal ou página específica.`);
-    }
-    
-    function filtrarAlugueis() {
-        const status = document.getElementById('filtroStatus').value;
-        if (status === 'todos') {
-            location.reload();
-        } else {
-            window.location.href = `/admin/alugueis?status=${status}`;
-        }
-    }
+async function atualizarStatus(id, status) {
+try {
+const response = await fetch(`/admin/alugueis/${id}/status`, {
+method: 'PUT',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ status })
+});
+if (response.ok) {
+alert('✅ Status atualizado com sucesso!');
+location.reload();
+} else {
+alert('❌ Erro ao atualizar status');
+}
+} catch (error) {
+console.error('Erro:', error);
+alert('❌ Erro de conexão');
+}
+}
+async function confirmarPagamento(id) {
+if (!confirm('💰 Confirmar o pagamento em DINHEIRO deste aluguel?')) return;
+try {
+const response = await fetch(`/admin/alugueis/${id}/confirmar-pagamento`, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' }
+});
+const result = await response.json();
+if (result.success) {
+alert('✅ Pagamento confirmado com sucesso!');
+location.reload();
+} else {
+alert('❌ Erro: ' + (result.error || 'Não foi possível confirmar'));
+}
+} catch (error) {
+console.error('Erro:', error);
+alert('❌ Erro de conexão');
+}
+}
+async function marcarComoPago(id) {
+if (!confirm('💳 Marcar este pedido como PAGO?')) return;
+try {
+const response = await fetch(`/admin/alugueis/${id}/marcar-pago`, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' }
+});
+const result = await response.json();
+if (result.success) {
+alert('✅ Pedido marcado como pago!');
+location.reload();
+} else {
+alert('❌ Erro: ' + (result.error || 'Não foi possível marcar'));
+}
+} catch (error) {
+console.error('Erro:', error);
+alert('❌ Erro de conexão');
+}
+}
+async function cancelarPedido(id) {
+if (!confirm('⚠️ Tem certeza que deseja CANCELAR este pedido?\nEsta ação não poderá ser desfeita.')) {
+return;
+}
+try {
+const response = await fetch(`/admin/alugueis/${id}/cancelar`, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' }
+});
+const result = await response.json();
+if (result.success) {
+alert('✅ Pedido cancelado com sucesso!');
+location.reload();
+} else {
+alert('❌ Erro: ' + (result.error || result.message || 'Não foi possível cancelar'));
+}
+} catch (error) {
+console.error('Erro:', error);
+alert('❌ Erro de conexão');
+}
+}
+async function verDetalhesCliente(id) {
+try {
+const response = await fetch(`/admin/alugueis/${id}/detalhes`);
+const data = await response.json();
+const conteudo = `
+<div class="space-y-3">
+<div class="bg-blue-50 p-3 rounded-lg"><p><strong>👤 Nome:</strong> ${data.cliente}</p><p><strong>✉️ Email:</strong> ${data.email || 'Não informado'}</p><p><strong>📞 Telefone:</strong> ${data.telefone || 'Não informado'}</p></div>
+<div class="bg-green-50 p-3 rounded-lg"><p><strong>📍 Endereço de Entrega:</strong><p class="mt-1">${data.endereco_entrega || 'Não informado'}</p></div>
+<div class="bg-slate-50 p-3 rounded-lg"><p><strong>📦 Pedido #:</strong> ${data.id}</p><p><strong>📅 Data:</strong> ${new Date(data.data_pedido).toLocaleString()}</p><p><strong>💰 Valor:</strong> R$ ${data.valor_total.toFixed(2)}</p><p><strong>💳 Pagamento:</strong> ${data.forma_pagamento}</p><p><strong>📌 Status:</strong> ${data.pagamento_confirmado ? '✅ Confirmado' : '⏳ Pendente'}</p></div>
+</div>`;
+document.getElementById('detalhesClienteConteudo').innerHTML = conteudo;
+document.getElementById('modalCliente').classList.remove('hidden');
+document.getElementById('modalCliente').classList.add('flex');
+} catch (error) {
+console.error('Erro:', error);
+alert('❌ Erro ao carregar detalhes do cliente');
+}
+}
+async function verDetalhes(id) {
+try {
+const response = await fetch(`/admin/alugueis/${id}/detalhes`);
+const data = await response.json();
+const conteudo = `
+<div class="space-y-3">
+<p><strong>📦 Pedido #:</strong> ${data.id}</p>
+<p><strong>👤 Cliente:</strong> ${data.cliente}</p>
+<hr class="border-slate-200">
+<p><strong>📍 Endereço:</strong></p><p>${data.endereco_entrega || 'Não informado'}</p>
+<hr class="border-slate-200">
+<p><strong>📅 Pedido:</strong> ${new Date(data.data_pedido).toLocaleString()}</p>
+<p><strong>📅 Período:</strong> ${new Date(data.data_inicio).toLocaleDateString()} até ${new Date(data.data_fim).toLocaleDateString()}</p>
+<p><strong>⏰ Hora:</strong> ${data.hora_entrega || '08:00'}</p>
+<hr class="border-slate-200">
+<p><strong>🎮 Itens:</strong></p>
+<ul class="list-disc list-inside ml-2 space-y-1">${data.itens.map(item => `<li>${item.nome} x${item.quantidade} = R$ ${(item.preco_unitario * item.quantidade).toFixed(2)}</li>`).join('')}</ul>
+<hr class="border-slate-200">
+<p><strong>💰 Total:</strong> R$ ${data.valor_total.toFixed(2)}</p>
+<p><strong>💳 Pagamento:</strong> ${data.forma_pagamento}</p>
+<p><strong>📌 Status Pagamento:</strong> ${data.pagamento_confirmado ? '✅ Confirmado' : '⏳ Pendente'}</p>
+<p><strong>📌 Status Aluguel:</strong> ${data.status}</p>
+</div>`;
+document.getElementById('detalhesConteudo').innerHTML = conteudo;
+document.getElementById('modalDetalhes').classList.remove('hidden');
+document.getElementById('modalDetalhes').classList.add('flex');
+} catch (error) {
+console.error('Erro:', error);
+alert('❌ Erro ao carregar detalhes');
+}
+}
+function fecharModalCliente() { document.getElementById('modalCliente').classList.add('hidden'); document.getElementById('modalCliente').classList.remove('flex'); }
+function fecharModalDetalhes() { document.getElementById('modalDetalhes').classList.add('hidden'); document.getElementById('modalDetalhes').classList.remove('flex'); }
 </script>
+<%- include('../partials/admin-footer.ejs') %>
