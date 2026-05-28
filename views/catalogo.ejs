@@ -134,6 +134,7 @@
         <script>
             let brinquedoSelecionado = null;
             let diasOcupados = [];
+            let diasOcupadosMap = {}; // Mapa com quantidade ocupada por dia
             let dataInicioSelecionada = null;
             let dataFimSelecionada = null;
             let quantidadeAtual = 1;
@@ -141,9 +142,18 @@
             let mesAtual = new Date();
             let anoAtual = mesAtual.getFullYear();
             let mesAtualNum = mesAtual.getMonth();
-            function getDataAtual() {
+            
+            // Retorna a data atual considerando o fuso horário do Brasil (UTC-3)
+            function getDataAtualBrasil() {
                 const agora = new Date();
-                return new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+                const offsetBrasil = -3;
+                const utc = agora.getTime() + (agora.getTimezoneOffset() * 60000);
+                return new Date(utc + (3600000 * offsetBrasil));
+            }
+            
+            function getDataAtual() {
+                const dataBrasil = getDataAtualBrasil();
+                return new Date(dataBrasil.getFullYear(), dataBrasil.getMonth(), dataBrasil.getDate());
             }
             function abrirCalendario(id, nome, preco, estoque) {
                 brinquedoSelecionado = { id, nome, preco };
@@ -161,6 +171,12 @@
                     selectHora.innerHTML += `<option value="${horaStr}">${horaStr}</option>`;
                 }
                 limparSelecao();
+                
+                // Atualiza mês/ano atual ao abrir calendário
+                const hoje = getDataAtual();
+                anoAtual = hoje.getFullYear();
+                mesAtualNum = hoje.getMonth();
+                
                 carregarDiasOcupados();
                 document.getElementById('modalCalendario').classList.remove('hidden');
                 document.getElementById('modalCalendario').classList.add('flex');
@@ -173,13 +189,45 @@
                 }
             }
             function aumentarQuantidade() {
-                if (quantidadeAtual < estoqueMaximo) {
-                    quantidadeAtual++;
-                    document.getElementById('quantidadeSelecionada').innerText = quantidadeAtual;
-                    verificarDisponibilidadeQuantidade();
-                } else {
-                    alert(`⚠️ Máximo disponível: ${estoqueMaximo} unidade(s)`);
+                // Verifica disponibilidade no período selecionado para a nova quantidade
+                if (!dataInicioSelecionada || !dataFimSelecionada) {
+                    alert('⚠️ Selecione um período primeiro!');
+                    return;
                 }
+                
+                const novaQuantidade = quantidadeAtual + 1;
+                
+                // Verifica se a nova quantidade excede o estoque máximo
+                if (novaQuantidade > estoqueMaximo) {
+                    alert(`⚠️ Máximo do estoque: ${estoqueMaximo} unidade(s)`);
+                    return;
+                }
+                
+                // Verifica disponibilidade real considerando aluguéis existentes
+                fetch('/cliente/verificar-disponibilidade', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        brinquedoId: brinquedoSelecionado.id,
+                        dataInicio: dataInicioSelecionada,
+                        dataFim: dataFimSelecionada,
+                        quantidade: novaQuantidade
+                    })
+                })
+                .then(res => res.json())
+                .then(result => {
+                    if (result.disponivel) {
+                        quantidadeAtual = novaQuantidade;
+                        document.getElementById('quantidadeSelecionada').innerText = quantidadeAtual;
+                        verificarDisponibilidadeQuantidade();
+                    } else {
+                        alert(`⚠️ Quantidade indisponível para o período selecionado. ${result.message}`);
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert('❌ Erro ao verificar disponibilidade');
+                });
             }
             async function verificarDisponibilidadeQuantidade() {
                 if (!dataInicioSelecionada || !dataFimSelecionada) return;
@@ -215,9 +263,11 @@
                     const response = await fetch(`/cliente/dias-indisponiveis/${brinquedoSelecionado.id}`);
                     const data = await response.json();
                     diasOcupados = data.diasIndisponiveis || [];
+                    diasOcupadosMap = data.diasOcupadosMap || {};
                     renderizarCalendario();
                 } catch (error) {
                     diasOcupados = [];
+                    diasOcupadosMap = {};
                     renderizarCalendario();
                 }
             }
@@ -226,6 +276,7 @@
                 const ultimoDia = new Date(anoAtual, mesAtualNum + 1, 0);
                 const diaInicioSemana = primeiroDia.getDay();
                 const hoje = getDataAtual();
+                const hojeSemHora = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
                 const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
                 document.getElementById('mesAno').innerHTML = `${nomesMeses[mesAtualNum]} ${anoAtual}`;
                 let dias = [];
@@ -235,14 +286,26 @@
                 for (let d = 1; d <= ultimoDia.getDate(); d++) {
                     const dataStr = `${anoAtual}-${String(mesAtualNum + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                     const dataObj = new Date(anoAtual, mesAtualNum, d);
-                    const isPassado = dataObj.getTime() < hoje.getTime();
-                    const isOcupado = diasOcupados.includes(dataStr);
+                    const dataObjSemHora = new Date(dataObj.getFullYear(), dataObj.getMonth(), dataObj.getDate());
+                    const isPassado = dataObjSemHora.getTime() < hojeSemHora.getTime();
+                    
+                    // Verifica se está totalmente ocupado (estoque zerado)
+                    const quantidadeOcupada = diasOcupadosMap[dataStr] || 0;
+                    const isTotalmenteOcupado = diasOcupados.includes(dataStr);
                     const isSelecionado = isDataSelecionada(dataStr);
+                    
                     let status = 'disponivel';
                     if (isPassado) status = 'passado';
-                    else if (isOcupado) status = 'ocupado';
+                    else if (isTotalmenteOcupado) status = 'ocupado';
                     else if (isSelecionado) status = 'selecionado';
-                    dias.push({ dia: d, data: dataStr, status });
+                    
+                    dias.push({ 
+                        dia: d, 
+                        data: dataStr, 
+                        status,
+                        quantidadeOcupada,
+                        disponivel: estoqueMaximo - quantidadeOcupada
+                    });
                 }
                 let grid = '';
                 dias.forEach(dia => {
@@ -261,10 +324,16 @@
                         } else {
                             cor = 'bg-green-500 text-white hover:bg-green-600';
                         }
+                        
+                        // Adiciona tooltip com informações de estoque
+                        const tooltip = dia.quantidadeOcupada > 0 && dia.status !== 'ocupado' 
+                            ? `title="${dia.disponivel}/${estoqueMaximo} disponíveis"` 
+                            : '';
+                        
                         grid += `
 <div class="h-9">
 <div class="${cor} rounded-lg flex items-center justify-center h-full text-sm font-medium ${cursor} transition"
-onclick="${onClick}">
+onclick="${onClick}" ${tooltip}>
 ${dia.dia}
 </div>
 </div>
@@ -288,14 +357,23 @@ ${dia.dia}
             function selecionarData(dataStr) {
                 const data = new Date(dataStr);
                 const hoje = getDataAtual();
-                if (data.getTime() < hoje.getTime()) {
+                
+                // Verifica se a data é passada (comparando apenas dia, mês e ano)
+                const dataSelecionada = new Date(data.getFullYear(), data.getMonth(), data.getDate());
+                const hojeSemHora = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+                
+                if (dataSelecionada.getTime() < hojeSemHora.getTime()) {
                     alert('⚠️ Não é possível selecionar datas passadas!');
                     return;
                 }
+                
+                // Verifica se a data está totalmente ocupada (estoque zerado)
                 if (diasOcupados.includes(dataStr)) {
-                    alert('❌ Esta data já está ocupada!');
+                    alert('❌ Esta data já está totalmente ocupada!');
                     return;
                 }
+                
+                // Se já tem período selecionado e usuário clica em outra data, limpa seleção anterior
                 if (!dataInicioSelecionada) {
                     dataInicioSelecionada = dataStr;
                     dataFimSelecionada = null;
@@ -312,20 +390,32 @@ ${dia.dia}
                         alert('⚠️ A data de fim deve ser posterior à data de início!');
                         return;
                     }
+                    
+                    // Verifica disponibilidade DIA A DIA considerando quantidade ocupada
                     let todasDisponiveis = true;
+                    let mensagemErro = '';
                     let dataAtual = new Date(inicio);
+                    
                     while (dataAtual <= fim) {
                         const dataAtualStr = dataAtual.toISOString().split('T')[0];
-                        if (diasOcupados.includes(dataAtualStr)) {
+                        const quantidadeOcupada = diasOcupadosMap[dataAtualStr] || 0;
+                        const disponivelNoDia = estoqueMaximo - quantidadeOcupada;
+                        
+                        // Verifica se o dia está totalmente ocupado
+                        if (disponivelNoDia <= 0) {
                             todasDisponiveis = false;
+                            mensagemErro = `❌ Dia ${formatarDataBR(dataAtualStr)} está totalmente ocupado!`;
                             break;
                         }
+                        
                         dataAtual.setDate(dataAtual.getDate() + 1);
                     }
+                    
                     if (!todasDisponiveis) {
-                        alert('❌ O período selecionado contém data(s) ocupada(s)!');
+                        alert(mensagemErro);
                         return;
                     }
+                    
                     dataFimSelecionada = dataStr;
                     document.getElementById('dataFimCal').value = formatarDataBR(dataStr);
                     mostrarMensagem(`✅ Período selecionado: ${formatarDataBR(dataInicioSelecionada)} até ${formatarDataBR(dataFimSelecionada)}`, 'green');
@@ -336,6 +426,8 @@ ${dia.dia}
             function limparSelecao() {
                 dataInicioSelecionada = null;
                 dataFimSelecionada = null;
+                quantidadeAtual = 1;
+                document.getElementById('quantidadeSelecionada').innerText = '1';
                 document.getElementById('dataInicioCal').value = '';
                 document.getElementById('dataFimCal').value = '';
                 document.getElementById('btnAdicionar').disabled = true;
@@ -359,6 +451,12 @@ ${dia.dia}
                 mesAtualNum = novaData.getMonth();
                 limparSelecao();
                 carregarDiasOcupados();
+                
+                // Atualiza o título do mês/ano após carregar dados
+                setTimeout(() => {
+                    const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+                    document.getElementById('mesAno').innerHTML = `${nomesMeses[mesAtualNum]} ${anoAtual}`;
+                }, 50);
             }
             function adicionarAoCarrinho() {
 <% if (!usuario) { %>

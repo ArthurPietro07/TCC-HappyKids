@@ -37,25 +37,35 @@ router.post('/verificar-disponibilidade', async (req, res) => {
             return res.json({ disponivel: false, message: 'Brinquedo não encontrado' });
         }
 
+        // Ajustar datas para o início e fim do dia
         const inicio = new Date(dataInicio);
+        inicio.setHours(0, 0, 0, 0);
+        
         const fim = new Date(dataFim);
+        fim.setHours(23, 59, 59, 999);
         
         // Buscar TODOS os aluguéis que ocupam QUALQUER dia do período
         const alugueisConflitantes = await Aluguel.find({
             'itens.brinquedo_id': brinquedoId,
             status: { $in: ['reservado', 'ativo', 'aguardando_pagamento', 'pago'] },
-            $or: [
-                { data_inicio: { $lte: fim }, data_fim: { $gte: inicio } }
-            ]
+            data_inicio: { $lte: fim },
+            data_fim: { $gte: inicio }
         });
 
-        // Verificar DIA A DIA
+        // Verificar DIA A DIA com precisão
         let dataAtual = new Date(inicio);
         let indisponivel = false;
         let mensagemErro = '';
         let diasOcupadosDetalhe = [];
         
         while (dataAtual <= fim) {
+            // Criar limites do dia atual
+            const inicioDia = new Date(dataAtual);
+            inicioDia.setHours(0, 0, 0, 0);
+            
+            const fimDia = new Date(dataAtual);
+            fimDia.setHours(23, 59, 59, 999);
+            
             let quantidadeNoDia = 0;
             const dataStr = dataAtual.toISOString().split('T')[0];
             
@@ -63,7 +73,8 @@ router.post('/verificar-disponibilidade', async (req, res) => {
                 const inicioAluguel = new Date(aluguel.data_inicio);
                 const fimAluguel = new Date(aluguel.data_fim);
                 
-                if (dataAtual >= inicioAluguel && dataAtual <= fimAluguel) {
+                // Verifica se o dia atual está dentro do período do aluguel
+                if (inicioDia <= fimAluguel && fimDia >= inicioAluguel) {
                     for (const item of aluguel.itens) {
                         if (item.brinquedo_id.toString() === brinquedoId) {
                             quantidadeNoDia += item.quantidade;
@@ -77,7 +88,7 @@ router.post('/verificar-disponibilidade', async (req, res) => {
             
             if (disponivelNoDia < quantidadeSolicitada) {
                 indisponivel = true;
-                mensagemErro = `❌ Dia ${dataAtual.toLocaleDateString()}: apenas ${disponivelNoDia} unidade(s) disponível(is) (estoque total: ${brinquedo.quantidade_estoque})`;
+                mensagemErro = `❌ Dia ${dataAtual.toLocaleDateString('pt-BR')}: apenas ${disponivelNoDia} unidade(s) disponível(is) (estoque total: ${brinquedo.quantidade_estoque})`;
                 break;
             }
             
@@ -128,8 +139,12 @@ router.post('/finalizar-pedido', async (req, res) => {
   }
 
   try {
+    // Ajustar datas para o início e fim do dia no fuso horário do Brasil
     const inicio = new Date(dataInicio);
+    inicio.setHours(0, 0, 0, 0);
+    
     const fim = new Date(dataFim);
+    fim.setHours(23, 59, 59, 999);
     
     let valorTotal = 0;
     const itensFormatados = [];
@@ -147,17 +162,24 @@ router.post('/finalizar-pedido', async (req, res) => {
         return res.json({ success: false, message: `Brinquedo ${item.nome} não encontrado` });
       }
 
-      // Verificar DIA A DIA
+      // Verificar DIA A DIA com precisão de data
       let dataAtual = new Date(inicio);
       let indisponivel = false;
       let mensagemErro = '';
       
       while (dataAtual <= fim) {
+        // Criar data do início e fim do dia atual
+        const inicioDia = new Date(dataAtual);
+        inicioDia.setHours(0, 0, 0, 0);
+        
+        const fimDia = new Date(dataAtual);
+        fimDia.setHours(23, 59, 59, 999);
+        
         const alugueisNoDia = await Aluguel.find({
           'itens.brinquedo_id': brinquedoId,
           status: { $in: ['reservado', 'ativo', 'aguardando_pagamento', 'pago'] },
-          data_inicio: { $lte: dataAtual },
-          data_fim: { $gte: dataAtual }
+          data_inicio: { $lte: fimDia },
+          data_fim: { $gte: inicioDia }
         });
         
         let quantidadeNoDia = 0;
@@ -173,7 +195,7 @@ router.post('/finalizar-pedido', async (req, res) => {
         
         if (disponivelNoDia < item.quantidade) {
           indisponivel = true;
-          mensagemErro = `"${brinquedo.nome}" indisponível para o dia ${dataAtual.toLocaleDateString()}. Disponível: ${disponivelNoDia} unidade(s)`;
+          mensagemErro = `"${brinquedo.nome}" indisponível para o dia ${dataAtual.toLocaleDateString('pt-BR')}. Disponível: ${disponivelNoDia} unidade(s), mas você solicitou ${item.quantidade}`;
           break;
         }
         
@@ -252,25 +274,56 @@ router.get('/dias-indisponiveis/:brinquedoId', async (req, res) => {
   const { brinquedoId } = req.params;
 
   try {
+    const brinquedo = await Brinquedo.findById(brinquedoId);
+    if (!brinquedo) {
+      return res.status(404).json({ error: 'Brinquedo não encontrado' });
+    }
+
     const alugueis = await Aluguel.find({
       'itens.brinquedo_id': brinquedoId,
       status: { $in: ['reservado', 'ativo', 'aguardando_pagamento', 'pago'] }
     });
 
-    const diasIndisponiveis = [];
+    // Mapear dias com quantidade ocupada
+    const diasOcupadosMap = {};
 
     alugueis.forEach(aluguel => {
-      let dataAtual = new Date(aluguel.data_inicio);
-      const dataFim = new Date(aluguel.data_fim);
-
-      while (dataAtual <= dataFim) {
+      // Ajustar datas para início e fim do dia
+      const inicioDia = new Date(aluguel.data_inicio);
+      inicioDia.setHours(0, 0, 0, 0);
+      
+      const fimDia = new Date(aluguel.data_fim);
+      fimDia.setHours(23, 59, 59, 999);
+      
+      let dataAtual = new Date(inicioDia);
+      
+      while (dataAtual <= fimDia) {
         const dataStr = dataAtual.toISOString().split('T')[0];
-        diasIndisponiveis.push(dataStr);
+        
+        if (!diasOcupadosMap[dataStr]) {
+          diasOcupadosMap[dataStr] = 0;
+        }
+
+        for (const item of aluguel.itens) {
+          if (item.brinquedo_id.toString() === brinquedoId) {
+            diasOcupadosMap[dataStr] += item.quantidade;
+          }
+        }
+
         dataAtual.setDate(dataAtual.getDate() + 1);
       }
     });
 
-    res.json({ diasIndisponiveis });
+    // Dias totalmente indisponíveis (estoque zerado)
+    const diasIndisponiveis = [];
+    
+    for (const [data, quantidadeOcupada] of Object.entries(diasOcupadosMap)) {
+      if (quantidadeOcupada >= brinquedo.quantidade_estoque) {
+        diasIndisponiveis.push(data);
+      }
+    }
+
+    res.json({ diasIndisponiveis, diasOcupadosMap });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Erro ao buscar dias indisponíveis' });
