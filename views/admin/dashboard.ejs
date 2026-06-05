@@ -1,51 +1,46 @@
-<%- include('../partials/admin-header.ejs') %>
-<div class="max-w-7xl mx-auto px-4 py-8 fade-in">
-  <h1 class="text-3xl font-bold text-slate-800 mb-8">Dashboard</h1>
-  <div class="grid md:grid-cols-4 gap-6 mb-10">
-    <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover-card flex items-center justify-between">
-      <div><p class="text-sm text-slate-500 font-medium">Total de Aluguéis</p><p class="text-3xl font-bold text-slate-800 mt-1"><%= totalAlugueis %></p></div>
-      <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center text-2xl"><i class="ri-shopping-bag-line"></i></div>
-    </div>
-    <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover-card flex items-center justify-between">
-      <div><p class="text-sm text-slate-500 font-medium">Aluguéis Ativos</p><p class="text-3xl font-bold text-emerald-600 mt-1"><%= alugueisAtivos %></p></div>
-      <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center text-2xl"><i class="ri-checkbox-circle-line"></i></div>
-    </div>
-    <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover-card flex items-center justify-between">
-      <div><p class="text-sm text-slate-500 font-medium">Total de Brinquedos</p><p class="text-3xl font-bold text-purple-600 mt-1"><%= totalBrinquedos %></p></div>
-      <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center text-2xl"><i class="ri-toy-line"></i></div>
-    </div>
-    <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover-card flex items-center justify-between">
-      <div><p class="text-sm text-slate-500 font-medium">Faturamento do Mês</p><p class="text-2xl font-bold text-amber-600 mt-1">R$ <%= faturamentoMes.toFixed(2) %></p><p class="text-xs text-slate-400 mt-1">*Pagamentos confirmados</p></div>
-      <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center text-2xl"><i class="ri-money-cash-line"></i></div>
-    </div>
-  </div>
+<%- include('../partials/admin-header') %>
 
-  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-    <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-      <h2 class="text-lg font-bold text-slate-800">Últimos Aluguéis</h2>
-      <a href="/admin/alugueis" class="text-sm text-blue-600 hover:text-blue-800 font-medium">Ver todos →</a>
+<h1 class="text-3xl font-bold mb-6">Dashboard</h1>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="text-3xl mb-2">📊</div>
+        <div class="text-2xl font-bold"><%= totalAlugueis %></div>
+        <div class="text-gray-600">Total de Aluguéis</div>
     </div>
-    <div class="overflow-x-auto">
-      <table class="w-full text-left">
-        <thead class="bg-slate-50 text-slate-500 text-xs uppercase"><tr><th class="p-4">Pedido</th><th class="p-4">Cliente</th><th class="p-4">Brinquedo(s)</th><th class="p-4">Data</th><th class="p-4">Valor</th><th class="p-4">Status</th></tr></thead>
-        <tbody class="divide-y divide-slate-100">
-          <% if (ultimosAlugueis && ultimosAlugueis.length > 0) { %>
-            <% ultimosAlugueis.forEach(aluguel => { %>
-              <tr class="hover:bg-slate-50 transition">
-                <td class="p-4 font-medium text-slate-800">#<%= aluguel.id.toString().slice(-6) %></td>
-                <td class="p-4 text-slate-600"><%= aluguel.usuario_nome %></td>
-                <td class="p-4"><ul class="text-sm text-slate-600 space-y-1"><% if (aluguel.itens && aluguel.itens.length > 0) { %><% aluguel.itens.forEach(item => { %><li><%= item.brinquedo_nome || 'Brinquedo' %> x<%= item.quantidade %></li><% }) %><% } else { %><li class="text-slate-400">-</li><% } %></ul></td>
-                <td class="p-4 text-sm text-slate-500"><%= new Date(aluguel.data_pedido).toLocaleDateString() %></td>
-                <td class="p-4 font-semibold text-slate-800">R$ <%= aluguel.valor_total.toFixed(2) %></td>
-                <td class="p-4"><% const statusClass = aluguel.status === 'reservado' ? 'badge-warning' : aluguel.status === 'ativo' ? 'badge-success' : aluguel.status === 'concluido' ? 'badge-info' : 'badge-danger'; %><span class="badge <%= statusClass %>"><%= aluguel.status %></span></td>
-              </tr>
-            <% }) %>
-          <% } else { %>
-            <tr><td colspan="6" class="text-center p-8 text-slate-400">Nenhum aluguel encontrado.</td></tr>
-          <% } %>
-        </tbody>
-      </table>
+    
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="text-3xl mb-2">✅</div>
+        <div class="text-2xl font-bold"><%= alugueisAtivos %></div>
+        <div class="text-gray-600">Aluguéis Ativos</div>
     </div>
-  </div>
+    
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="text-3xl mb-2">🎈</div>
+        <div class="text-2xl font-bold"><%= totalBrinquedos %></div>
+        <div class="text-gray-600">Brinquedos</div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="text-3xl mb-2">💰</div>
+        <div class="text-2xl font-bold text-green-600">R$ <%= faturamentoMes.toFixed(2) %></div>
+        <div class="text-gray-600">Faturamento do Mês</div>
+    </div>
 </div>
-<%- include('../partials/admin-footer.ejs') %>
+
+<div class="bg-white rounded-lg shadow-md p-6">
+    <h2 class="text-xl font-bold mb-4">Ações Rápidas</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <a href="/admin/brinquedos" class="bg-blue-600 text-white text-center py-3 rounded hover:bg-blue-700 transition">
+            Gerenciar Brinquedos
+        </a>
+        <a href="/admin/alugueis" class="bg-green-600 text-white text-center py-3 rounded hover:bg-green-700 transition">
+            Gerenciar Aluguéis
+        </a>
+        <a href="/admin/calendario?mes=<%= moment().format('MM') %>&ano=<%= moment().format('YYYY') %>" class="bg-purple-600 text-white text-center py-3 rounded hover:bg-purple-700 transition">
+            Ver Calendário
+        </a>
+    </div>
+</div>
+
+<%- include('../partials/admin-footer') %>

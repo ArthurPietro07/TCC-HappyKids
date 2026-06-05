@@ -1,5 +1,21 @@
 const mongoose = require('mongoose');
 
+const ItemAluguelSchema = new mongoose.Schema({
+    brinquedo_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Brinquedo',
+        required: true
+    },
+    nome_brinquedo: String,
+    quantidade: {
+        type: Number,
+        required: true,
+        min: 1
+    },
+    preco_diaria: Number,
+    subtotal: Number
+});
+
 const AluguelSchema = new mongoose.Schema({
     usuario_id: {
         type: mongoose.Schema.Types.ObjectId,
@@ -22,54 +38,30 @@ const AluguelSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    periodo_tipo: {
-        type: String,
-        enum: ['diaria', 'semanal'],
-        default: 'diaria'
-    },
     valor_total: {
         type: Number,
         required: true
     },
     status: {
         type: String,
-        enum: ['reservado', 'ativo', 'concluido', 'atrasado', 'aguardando_pagamento', 'pago', 'cancelado'],
-        default: 'reservado'
+        enum: ['aguardando_pagamento', 'pago', 'ativo', 'concluido', 'cancelado', 'atrasado'],
+        default: 'aguardando_pagamento'
     },
     forma_pagamento: {
         type: String,
-        enum: ['dinheiro', 'cartao', 'pix', 'pagar_retirada'],
+        enum: ['dinheiro', 'pix'],
         required: true
     },
     pagamento_confirmado: {
         type: Boolean,
         default: false
     },
-    data_pagamento: {
-        type: Date
-    },
+    data_pagamento: Date,
     endereco_entrega: {
         type: String,
-        default: ''
+        required: true
     },
-    itens: [{
-        brinquedo_id: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Brinquedo',
-            required: true
-        },
-        quantidade: {
-            type: Number,
-            required: true,
-            min: 1
-        },
-        preco_unitario: {
-            type: Number,
-            required: true
-        }
-    }]
-}, {
-    timestamps: true
+    itens: [ItemAluguelSchema]
 });
 
 module.exports = mongoose.model('Aluguel', AluguelSchema);

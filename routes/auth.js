@@ -1,219 +1,176 @@
 const express = require('express');
+const router = express.Router();
 const bcrypt = require('bcryptjs');
 const Usuario = require('../models/Usuario');
 const nodemailer = require('nodemailer');
-const router = express.Router();
+const crypto = require('crypto');
 
-// Configuração do email (SUBSTITUA PELOS SEUS DADOS)
+// Configuração do nodemailer (exemplo com ethereal.email para teste)
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.ethereal.email',
+    port: 587,
     auth: {
-        user: 'seuemail@gmail.com', // 🔧 SUBSTITUA PELO SEU EMAIL
-        pass: 'suasenhaapp' // 🔧 SUBSTITUA PELA SENHA DO APP
+        user: 'teste@ethereal.email', // Substituir por credenciais reais
+        pass: 'teste123'
     }
 });
 
-// Página de login
+// Login
 router.get('/login', (req, res) => {
-    res.render('login', { error: null, success: req.query.success || null });
+    res.render('login', { error: req.session.error, success: req.session.success });
 });
 
-// Processar login
 router.post('/login', async (req, res) => {
-    const { email, senha, lembrar } = req.body;
-
     try {
-        const usuario = await Usuario.findOne({ email });
-
-        if (!usuario) {
-            return res.render('login', { error: 'Email ou senha inválidos', success: null });
+        const { email, senha } = req.body;
+        const usuario = await Usuario.findOne({ email: email.toLowerCase() });
+        
+        if (!usuario || !bcrypt.compareSync(senha, usuario.senha)) {
+            req.session.error = 'Email ou senha inválidos';
+            return res.redirect('/auth/login');
         }
-
-        const senhaValida = await bcrypt.compare(senha, usuario.senha);
-
-        if (!senhaValida) {
-            return res.render('login', { error: 'Email ou senha inválidos', success: null });
-        }
-
-        req.session.usuario = {
+        
+        req.session.user = {
             id: usuario._id,
             nome: usuario.nome,
             email: usuario.email,
-            tipo: usuario.tipo,
-            telefone: usuario.telefone
+            tipo: usuario.tipo
         };
-
-        if (lembrar === 'true') {
-            req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000;
-        } else {
-            req.session.cookie.maxAge = 7 * 24 * 60 * 60 * 1000;
-        }
-
-        if (usuario.tipo === 'admin') {
-            res.redirect('/admin/dashboard');
-        } else {
-            res.redirect('/');
-        }
+        
+        const redirectTo = req.session.redirectTo || (usuario.tipo === 'admin' ? '/admin/dashboard' : '/');
+        delete req.session.redirectTo;
+        res.redirect(redirectTo);
     } catch (error) {
-        console.error(error);
-        res.render('login', { error: 'Erro ao fazer login. Tente novamente.', success: null });
+        req.session.error = 'Erro ao fazer login';
+        res.redirect('/auth/login');
     }
 });
 
-// Página de cadastro
+// Cadastro
 router.get('/cadastro', (req, res) => {
-    res.render('cadastro', { error: null });
+    res.render('cadastro', { error: req.session.error });
 });
 
-// Processar cadastro
 router.post('/cadastro', async (req, res) => {
-    const { nome, email, senha, telefone } = req.body;
-
     try {
-        const usuarioExistente = await Usuario.findOne({ email });
-        if (usuarioExistente) {
-            return res.render('cadastro', { error: 'Email já cadastrado' });
+        const { nome, email, telefone, senha, confirmar_senha } = req.body;
+        
+        if (senha !== confirmar_senha) {
+            req.session.error = 'As senhas não coincidem';
+            return res.redirect('/auth/cadastro');
         }
-
-        const senhaHash = await bcrypt.hash(senha, 10);
-
-        const novoUsuario = new Usuario({
+        
+        const usuarioExists = await Usuario.findOne({ email: email.toLowerCase() });
+        if (usuarioExists) {
+            req.session.error = 'Email já cadastrado';
+            return res.redirect('/auth/cadastro');
+        }
+        
+        const usuario = new Usuario({
             nome,
-            email,
-            senha: senhaHash,
+            email: email.toLowerCase(),
             telefone,
-            tipo: 'cliente'
-        });
-
-        await novoUsuario.save();
-
-        req.session.usuario = {
-            id: novoUsuario._id,
-            nome: novoUsuario.nome,
-            email: novoUsuario.email,
-            tipo: novoUsuario.tipo,
-            telefone: novoUsuario.telefone
-        };
-
-        res.redirect('/');
-    } catch (error) {
-        console.error(error);
-        res.render('cadastro', { error: 'Erro ao cadastrar. Tente novamente.' });
-    }
-});
-
-// Página: Esqueceu a senha
-router.get('/esqueceu-senha', (req, res) => {
-    res.render('esqueceu-senha', { error: null, success: null });
-});
-
-// Processar: Enviar email de recuperação
-router.post('/esqueceu-senha', async (req, res) => {
-    const { email } = req.body;
-
-    try {
-        const usuario = await Usuario.findOne({ email });
-        
-        if (!usuario) {
-            return res.render('esqueceu-senha', { error: 'Email não encontrado', success: null });
-        }
-
-        const token = Buffer.from(`${usuario._id}-${Date.now()}`).toString('base64');
-        
-        usuario.resetToken = token;
-        usuario.resetTokenExpiry = Date.now() + 3600000;
-        await usuario.save();
-
-        const resetLink = `http://localhost:3000/redefinir-senha?token=${token}`;
-
-        await transporter.sendMail({
-            from: '"HappyKids" <seuemail@gmail.com>',
-            to: usuario.email,
-            subject: 'Recuperação de Senha - HappyKids',
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2 style="color: #2563eb;">Olá ${usuario.nome}!</h2>
-                    <p>Recebemos uma solicitação para redefinir sua senha no HappyKids.</p>
-                    <p>Clique no botão abaixo para criar uma nova senha:</p>
-                    <a href="${resetLink}" style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; margin: 20px 0;">Redefinir Senha</a>
-                    <p>Este link é válido por 1 hora.</p>
-                    <p>Se você não solicitou essa alteração, ignore este email.</p>
-                    <hr>
-                    <p style="font-size: 12px; color: #666;">HappyKids - Aluguel de Brinquedos</p>
-                </div>
-            `
-        });
-
-        res.render('esqueceu-senha', { 
-            error: null, 
-            success: 'Email enviado! Verifique sua caixa de entrada para redefinir a senha.' 
-        });
-    } catch (error) {
-        console.error(error);
-        res.render('esqueceu-senha', { error: 'Erro ao enviar email. Tente novamente.', success: null });
-    }
-});
-
-// Página: Redefinir senha
-router.get('/redefinir-senha', async (req, res) => {
-    const { token } = req.query;
-    
-    try {
-        const usuario = await Usuario.findOne({ 
-            resetToken: token,
-            resetTokenExpiry: { $gt: Date.now() }
+            senha: bcrypt.hashSync(senha, 10),
+            tipo: 'cliente',
+            data_cadastro: new Date()
         });
         
-        if (!usuario) {
-            return res.render('redefinir-senha', { error: 'Link inválido ou expirado.', token: null });
-        }
-        
-        res.render('redefinir-senha', { error: null, token });
-    } catch (error) {
-        console.error(error);
-        res.render('redefinir-senha', { error: 'Erro ao processar solicitação.', token: null });
-    }
-});
-
-// Processar: Salvar nova senha
-router.post('/redefinir-senha', async (req, res) => {
-    const { token, senha, confirmarSenha } = req.body;
-    
-    if (senha !== confirmarSenha) {
-        return res.render('redefinir-senha', { error: 'As senhas não coincidem.', token });
-    }
-    
-    try {
-        const usuario = await Usuario.findOne({ 
-            resetToken: token,
-            resetTokenExpiry: { $gt: Date.now() }
-        });
-        
-        if (!usuario) {
-            return res.render('redefinir-senha', { error: 'Link inválido ou expirado.', token: null });
-        }
-        
-        const novaSenhaHash = await bcrypt.hash(senha, 10);
-        usuario.senha = novaSenhaHash;
-        usuario.resetToken = undefined;
-        usuario.resetTokenExpiry = undefined;
         await usuario.save();
         
-        res.redirect('/login?success=Senha redefinida com sucesso! Faça login.');
+        req.session.success = 'Cadastro realizado com sucesso! Faça login';
+        res.redirect('/auth/login');
     } catch (error) {
-        console.error(error);
-        res.render('redefinir-senha', { error: 'Erro ao redefinir senha.', token });
+        req.session.error = 'Erro ao cadastrar';
+        res.redirect('/auth/cadastro');
     }
 });
 
 // Logout
 router.get('/logout', (req, res) => {
-    req.session.destroy((err) => {
-        if (err) {
-            console.error(err);
+    req.session.destroy();
+    res.redirect('/');
+});
+
+// Esqueceu senha
+router.get('/esqueceu-senha', (req, res) => {
+    res.render('esqueceu-senha', { error: req.session.error, success: req.session.success });
+});
+
+router.post('/esqueceu-senha', async (req, res) => {
+    try {
+        const { email } = req.body;
+        const usuario = await Usuario.findOne({ email: email.toLowerCase() });
+        
+        if (!usuario) {
+            req.session.error = 'Email não encontrado';
+            return res.redirect('/auth/esqueceu-senha');
         }
-        res.redirect('/');
-    });
+        
+        const token = crypto.randomBytes(32).toString('hex');
+        usuario.resetToken = token;
+        usuario.resetTokenExpiry = Date.now() + 3600000; // 1 hora
+        await usuario.save();
+        
+        // Enviar email com link de redefinição
+        const resetUrl = `http://localhost:3000/auth/redefinir-senha/${token}`;
+        
+        req.session.success = 'Email de recuperação enviado!';
+        res.redirect('/auth/esqueceu-senha');
+    } catch (error) {
+        req.session.error = 'Erro ao processar solicitação';
+        res.redirect('/auth/esqueceu-senha');
+    }
+});
+
+// Redefinir senha
+router.get('/redefinir-senha/:token', async (req, res) => {
+    try {
+        const usuario = await Usuario.findOne({
+            resetToken: req.params.token,
+            resetTokenExpiry: { $gt: Date.now() }
+        });
+        
+        if (!usuario) {
+            req.session.error = 'Token inválido ou expirado';
+            return res.redirect('/auth/esqueceu-senha');
+        }
+        
+        res.render('redefinir-senha', { token: req.params.token });
+    } catch (error) {
+        res.redirect('/auth/esqueceu-senha');
+    }
+});
+
+router.post('/redefinir-senha/:token', async (req, res) => {
+    try {
+        const { senha, confirmar_senha } = req.body;
+        
+        if (senha !== confirmar_senha) {
+            req.session.error = 'As senhas não coincidem';
+            return res.redirect(`/auth/redefinir-senha/${req.params.token}`);
+        }
+        
+        const usuario = await Usuario.findOne({
+            resetToken: req.params.token,
+            resetTokenExpiry: { $gt: Date.now() }
+        });
+        
+        if (!usuario) {
+            req.session.error = 'Token inválido ou expirado';
+            return res.redirect('/auth/esqueceu-senha');
+        }
+        
+        usuario.senha = bcrypt.hashSync(senha, 10);
+        usuario.resetToken = undefined;
+        usuario.resetTokenExpiry = undefined;
+        await usuario.save();
+        
+        req.session.success = 'Senha redefinida com sucesso! Faça login';
+        res.redirect('/auth/login');
+    } catch (error) {
+        req.session.error = 'Erro ao redefinir senha';
+        res.redirect(`/auth/redefinir-senha/${req.params.token}`);
+    }
 });
 
 module.exports = router;

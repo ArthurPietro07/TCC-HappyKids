@@ -1,25 +1,31 @@
-// Middleware para verificar se usuário está logado
-function isAuthenticated(req, res, next) {
-    if (req.session.usuario) {
-        return next();
+const authMiddleware = {
+    // Verificar se usuário está logado
+    isAuthenticated: (req, res, next) => {
+        if (req.session.user) {
+            return next();
+        }
+        req.session.redirectTo = req.originalUrl;
+        req.session.error = 'Faça login para continuar';
+        res.redirect('/login');
+    },
+    
+    // Verificar se é admin
+    isAdmin: (req, res, next) => {
+        if (req.session.user && req.session.user.tipo === 'admin') {
+            return next();
+        }
+        req.session.error = 'Acesso negado. Área restrita para administradores';
+        res.redirect('/');
+    },
+    
+    // Verificar se é cliente
+    isCliente: (req, res, next) => {
+        if (req.session.user && req.session.user.tipo === 'cliente') {
+            return next();
+        }
+        req.session.error = 'Acesso negado. Área restrita para clientes';
+        res.redirect('/');
     }
-    res.redirect('/login');
-}
+};
 
-// Middleware para verificar se é admin
-function isAdmin(req, res, next) {
-    if (req.session.usuario && req.session.usuario.tipo === 'admin') {
-        return next();
-    }
-    res.status(403).send('Acesso negado! Apenas administradores.');
-}
-
-// Middleware para verificar se é cliente
-function isCliente(req, res, next) {
-    if (req.session.usuario && req.session.usuario.tipo === 'cliente') {
-        return next();
-    }
-    res.status(403).send('Acesso negado! Área exclusiva para clientes.');
-}
-
-module.exports = { isAuthenticated, isAdmin, isCliente };
+module.exports = authMiddleware;

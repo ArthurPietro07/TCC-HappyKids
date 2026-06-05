@@ -1,9 +1,25 @@
-</main>
-<footer class="bg-slate-900 text-slate-400 py-6 mt-8">
-    <div class="max-w-7xl mx-auto px-4 text-center text-sm">
-        <p>&copy; <%= new Date().getFullYear() %> HappyKids - Sistema de Administração</p>
+    </main>
+    <div class="loading">
+        <div class="bg-white p-4 rounded shadow-lg">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        </div>
     </div>
-</footer>
+    <script>
+        function showLoading() { document.querySelector('.loading').style.display = 'block'; }
+        function hideLoading() { document.querySelector('.loading').style.display = 'none'; }
+        
+        async function fetchAPI(url, options = {}) {
+            showLoading();
+            try {
+                const response = await fetch(url, { ...options, headers: { 'Content-Type': 'application/json' } });
+                const data = await response.json();
+                hideLoading();
+                return data;
+            } catch (error) {
+                hideLoading();
+                throw error;
+            }
+        }
+    </script>
 </body>
-
 </html>

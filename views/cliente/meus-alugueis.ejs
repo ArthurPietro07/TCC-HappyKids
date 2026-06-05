@@ -1,57 +1,84 @@
-<%- include('../partials/header.ejs') %>
-<section class="max-w-7xl mx-auto px-4 py-10 fade-in">
-  <h1 class="text-3xl font-bold text-slate-800 mb-8">📋 Meus Aluguéis</h1>
-  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="w-full text-left">
-        <thead class="bg-slate-50 text-slate-500 text-xs uppercase"><tr><th class="p-4">Pedido</th><th class="p-4">Brinquedo(s)</th><th class="p-4">Período</th><th class="p-4">Hora</th><th class="p-4">Valor</th><th class="p-4">Pagamento</th><th class="p-4">Status</th><th class="p-4">Ações</th></tr></thead>
-        <tbody class="divide-y divide-slate-100">
-          <% if (alugueis && alugueis.length > 0) { %>
-            <% alugueis.forEach(aluguel => { %>
-              <tr class="hover:bg-slate-50 transition">
-                <td class="p-4 font-medium">#<%= aluguel._id.toString().slice(-6) %></td>
-                <td class="p-4"><ul class="text-sm text-slate-600 space-y-1"><% if (aluguel.itens && aluguel.itens.length > 0) { %><% aluguel.itens.forEach(item => { %><li><% if (item.brinquedo_id && item.brinquedo_id.nome) { %><%= item.brinquedo_id.nome %> x<%= item.quantidade %><% } else { %>Brinquedo x<%= item.quantidade %><% } %></li><% }) %><% } else { %><li class="text-slate-400">-</li><% } %></ul></td>
-                <td class="p-4 text-sm text-slate-500"><%= new Date(aluguel.data_inicio).toLocaleDateString() %> → <%= new Date(aluguel.data_fim).toLocaleDateString() %></td>
-                <td class="p-4 text-sm"><%= aluguel.hora_entrega || '08:00' %></td>
-                <td class="p-4 font-semibold text-slate-800">R$ <%= aluguel.valor_total.toFixed(2) %></td>
-                <td class="p-4 text-sm"><% if (aluguel.forma_pagamento === 'dinheiro') { %><span class="text-yellow-600">💰 Dinheiro</span><% } else if (aluguel.forma_pagamento === 'pix') { %><span class="text-green-600">📱 PIX</span><% } else if (aluguel.forma_pagamento === 'cartao') { %><span class="text-blue-600">💳 Cartão</span><% } else { %><span class="text-gray-600">🏪 Retirada</span><% } %><% if (aluguel.pagamento_confirmado) { %><span class="block text-xs text-green-600 mt-1">✓ Pago</span><% } else { %><span class="block text-xs text-red-500 mt-1">⏳ Pendente</span><% } %></td>
-                <td class="p-4"><% if (aluguel.status === 'cancelado') { %><span class="badge badge-gray">❌ Cancelado</span><% } else if (aluguel.status === 'reservado') { %><span class="badge badge-warning">📅 Reservado</span><% } else if (aluguel.status === 'ativo') { %><span class="badge badge-success">✅ Ativo</span><% } else if (aluguel.status === 'concluido') { %><span class="badge badge-info">✔️ Concluído</span><% } else if (aluguel.status === 'atrasado') { %><span class="badge badge-danger">⚠️ Atrasado</span><% } else if (aluguel.status === 'aguardando_pagamento') { %><span class="badge badge-warning">⏳ Aguardando</span><% } else if (aluguel.status === 'pago') { %><span class="badge badge-success">💰 Pago</span><% } %></td>
-                <td class="p-4"><% if (aluguel.status !== 'cancelado' && aluguel.status !== 'concluido') { %><button onclick="cancelarPedido('<%= aluguel._id %>')" class="bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-red-700 transition w-full font-medium">❌ Cancelar</button><% } else { %><span class="text-slate-400 text-sm">-</span><% } %></td>
-              </tr>
-            <% }) %>
-          <% } else { %>
-            <tr><td colspan="8" class="text-center p-8 text-slate-400">📭 Você ainda não fez nenhum aluguel. <a href="/catalogo" class="text-blue-600 hover:underline">Ver brinquedos</a></td></tr>
-          <% } %>
-        </tbody>
-      </table>
+<%- include('../partials/header') %>
+
+<h1 class="text-3xl font-bold mb-6">Meus Aluguéis</h1>
+
+<% if (alugueis.length === 0) { %>
+    <div class="bg-white rounded-lg shadow-md p-8 text-center">
+        <p class="text-gray-600">Você ainda não realizou nenhum aluguel.</p>
+        <a href="/catalogo" class="mt-4 inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Ver Catálogo</a>
     </div>
-  </div>
-</section>
+<% } else { %>
+    <div class="space-y-4">
+        <% alugueis.forEach(aluguel => { %>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <span class="text-sm text-gray-500">Pedido: <%= moment(aluguel.data_pedido).format('DD/MM/YYYY HH:mm') %></span>
+                        <div class="mt-1">
+                            <span class="inline-block px-2 py-1 text-xs rounded
+                                <%= aluguel.status === 'pago' || aluguel.status === 'ativo' ? 'bg-green-100 text-green-800' : '' %>
+                                <%= aluguel.status === 'aguardando_pagamento' ? 'bg-yellow-100 text-yellow-800' : '' %>
+                                <%= aluguel.status === 'cancelado' ? 'bg-red-100 text-red-800' : '' %>
+                                <%= aluguel.status === 'concluido' ? 'bg-blue-100 text-blue-800' : '' %>
+                            ">
+                                <%= aluguel.status === 'aguardando_pagamento' ? 'Aguardando Pagamento' : 
+                                   aluguel.status === 'pago' ? 'Pago' :
+                                   aluguel.status === 'ativo' ? 'Ativo' :
+                                   aluguel.status === 'concluido' ? 'Concluído' : 'Cancelado' %>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-2xl font-bold text-blue-600">R$ <%= aluguel.valor_total.toFixed(2) %></p>
+                        <p class="text-sm text-gray-500"><%= aluguel.forma_pagamento === 'pix' ? 'PIX' : 'Dinheiro' %></p>
+                    </div>
+                </div>
+                
+                <div class="border-t pt-4">
+                    <p class="text-sm text-gray-600">Período: <%= moment(aluguel.data_inicio).format('DD/MM/YYYY') %> até <%= moment(aluguel.data_fim).format('DD/MM/YYYY') %></p>
+                    <p class="text-sm text-gray-600">Horário de entrega: <%= aluguel.hora_entrega %></p>
+                    <p class="text-sm text-gray-600">Endereço: <%= aluguel.endereco_entrega %></p>
+                </div>
+                
+                <div class="mt-4">
+                    <h4 class="font-semibold mb-2">Itens alugados:</h4>
+                    <ul class="space-y-1">
+                        <% aluguel.itens.forEach(item => { %>
+                            <li class="text-sm text-gray-700">
+                                <%= item.quantidade %>x <%= item.nome_brinquedo %> - R$ <%= (item.subtotal || item.preco_diaria * item.quantidade).toFixed(2) %>
+                            </li>
+                        <% }) %>
+                    </ul>
+                </div>
+                
+                <% if (aluguel.status === 'aguardando_pagamento' || aluguel.status === 'pago') { %>
+                    <div class="mt-4 pt-4 border-t">
+                        <button onclick="cancelarAluguel('<%= aluguel._id %>')" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition">
+                            Cancelar Aluguel
+                        </button>
+                    </div>
+                <% } %>
+            </div>
+        <% }) %>
+    </div>
+<% } %>
+
 <script>
-async function cancelarPedido(id) {
-console.log('🔄 Tentando cancelar pedido:', id);
-if (!confirm('⚠️ Tem certeza que deseja cancelar este pedido?\nEsta ação não poderá ser desfeita.')) {
-console.log('❌ Cancelamento abortado pelo usuário');
-return;
-}
-try {
-console.log('📡 Enviando requisição para /cliente/cancelar/' + id);
-const response = await fetch(`/cliente/cancelar/${id}`, {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' }
-});
-const result = await response.json();
-console.log('📨 Resposta do servidor:', result);
-if (result.success) {
-alert('✅ Pedido cancelado com sucesso!');
-location.reload();
-} else {
-alert('❌ Erro: ' + result.message);
-}
-} catch (error) {
-console.error('❌ Erro no cancelamento:', error);
-alert('❌ Erro ao cancelar pedido');
-}
+async function cancelarAluguel(id) {
+    if (confirm('Tem certeza que deseja cancelar este aluguel?')) {
+        try {
+            const data = await fetchAPI(`/cliente/cancelar/${id}`, { method: 'POST' });
+            if (data.success) {
+                alert('Aluguel cancelado com sucesso!');
+                location.reload();
+            } else {
+                alert('Erro ao cancelar aluguel');
+            }
+        } catch (error) {
+            alert('Erro ao cancelar aluguel');
+        }
+    }
 }
 </script>
-<%- include('../partials/footer.ejs') %>
+
+<%- include('../partials/footer') %>

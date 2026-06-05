@@ -1,0 +1,335 @@
+<%- include('partials/header') %>
+
+<div class="max-w-6xl mx-auto">
+    <a href="/catalogo" class="inline-block mb-6 text-blue-600 hover:text-blue-800">&larr; Voltar ao catálogo</a>
+    
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="grid md:grid-cols-2 gap-8 p-6">
+            <!-- Carrossel de Imagens -->
+            <div class="bg-gray-100 rounded-lg p-4">
+                <% if (brinquedo.imagens && brinquedo.imagens.length > 0) { %>
+                    <div class="relative">
+                        <div class="overflow-hidden rounded-lg">
+                            <div id="carrosselContainer" class="flex transition-transform duration-300 ease-in-out">
+                                <% brinquedo.imagens.forEach((img, index) => { %>
+                                    <div class="w-full flex-shrink-0">
+                                        <img src="<%= img.url %>" alt="<%= brinquedo.nome %>" class="w-full h-96 object-contain">
+                                    </div>
+                                <% }) %>
+                            </div>
+                        </div>
+                        
+                        <% if (brinquedo.imagens.length > 1) { %>
+                            <button onclick="mudarImagem(-1)" class="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-2 hover:bg-opacity-75 transition">
+                                ❮
+                            </button>
+                            <button onclick="mudarImagem(1)" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-2 hover:bg-opacity-75 transition">
+                                ❯
+                            </button>
+                        <% } %>
+                    </div>
+                    
+                    <!-- Miniaturas -->
+                    <% if (brinquedo.imagens.length > 1) { %>
+                        <div class="flex gap-2 mt-4 justify-center">
+                            <% brinquedo.imagens.forEach((img, index) => { %>
+                                <img src="<%= img.url %>" alt="Miniatura" 
+                                     class="w-16 h-16 object-cover rounded cursor-pointer border-2 hover:border-blue-500 transition miniatura"
+                                     data-index="<%= index %>"
+                                     onclick="irParaImagem(<%= index %>)">
+                            <% }) %>
+                        </div>
+                    <% } %>
+                <% } else { %>
+                    <img src="/uploads/default.jpg" alt="<%= brinquedo.nome %>" class="w-full h-96 object-contain rounded-lg">
+                <% } %>
+            </div>
+            
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-2"><%= brinquedo.nome %></h1>
+                
+                <div class="flex items-center mb-4">
+                    <div class="flex mr-2">
+                        <% for(let i = 1; i <= 5; i++) { %>
+                            <span class="text-<%= i <= Math.round(mediaEstrelas) ? 'yellow-400' : 'gray-300' %> text-xl">★</span>
+                        <% } %>
+                    </div>
+                    <span class="text-gray-600">(<%= comentarios.length %> avaliações)</span>
+                </div>
+                
+                <p class="text-gray-600 mb-6 leading-relaxed"><%= brinquedo.descricao %></p>
+                
+                <div class="border-t border-b py-4 mb-6">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-gray-600">Preço por dia:</span>
+                        <span class="text-2xl font-bold text-blue-600">R$ <%= brinquedo.preco_diaria.toFixed(2) %></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Preço por semana:</span>
+                        <span class="text-xl font-bold text-green-600">R$ <%= brinquedo.preco_semanal.toFixed(2) %></span>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="font-semibold text-gray-700">Disponibilidade:</span>
+                        <span class="px-3 py-1 rounded-full text-sm <%= brinquedo.quantidade_estoque > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
+                            <%= brinquedo.quantidade_estoque > 0 ? `${brinquedo.quantidade_estoque} unidades disponíveis` : 'Indisponível' %>
+                        </span>
+                    </div>
+                    
+                    <% if (user && user.tipo === 'cliente' && brinquedo.quantidade_estoque > 0) { %>
+                        <div class="flex gap-3">
+                            <input type="number" id="quantidade" value="1" min="1" max="<%= brinquedo.quantidade_estoque %>" class="w-24 px-3 py-2 border rounded-lg text-center">
+                            <button onclick="adicionarAoCarrinho()" class="flex-1 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition font-semibold">
+                                Adicionar ao Carrinho
+                            </button>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Resto do conteúdo (calendário e comentários) permanece igual -->
+        <!-- Calendário de Disponibilidade -->
+        <div class="border-t p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Calendário de Disponibilidade</h2>
+                <div class="flex gap-3">
+                    <a href="?mes=<%= mesAtual-1 %>&ano=<%= mesAtual === 0 ? anoAtual-1 : anoAtual %>" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+                        &laquo; Mês Anterior
+                    </a>
+                    <span class="text-xl font-semibold px-4 py-2">
+                        <%= mesesPortugues[mesAtual] %> <%= anoAtual %>
+                    </span>
+                    <a href="?mes=<%= mesAtual+1 %>&ano=<%= mesAtual === 11 ? anoAtual+1 : anoAtual %>" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+                        Próximo Mês &raquo;
+                    </a>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-7 gap-2 mb-4">
+                <div class="text-center font-bold p-3 bg-blue-100 rounded-lg text-blue-800">Domingo</div>
+                <div class="text-center font-bold p-3 bg-blue-100 rounded-lg text-blue-800">Segunda</div>
+                <div class="text-center font-bold p-3 bg-blue-100 rounded-lg text-blue-800">Terça</div>
+                <div class="text-center font-bold p-3 bg-blue-100 rounded-lg text-blue-800">Quarta</div>
+                <div class="text-center font-bold p-3 bg-blue-100 rounded-lg text-blue-800">Quinta</div>
+                <div class="text-center font-bold p-3 bg-blue-100 rounded-lg text-blue-800">Sexta</div>
+                <div class="text-center font-bold p-3 bg-blue-100 rounded-lg text-blue-800">Sábado</div>
+            </div>
+            
+            <div class="grid grid-cols-7 gap-2">
+                <% for(let i = 0; i < primeiroDiaSemana; i++) { %>
+                    <div class="bg-gray-100 rounded-lg p-3 min-h-[100px]"></div>
+                <% } %>
+                
+                <% for(let dia = 1; dia <= diasNoMes; dia++) { 
+                    const ocup = diasOcupados[dia];
+                    const disponivel = ocup ? ocup.disponivel : 0;
+                    const isPassado = ocup ? ocup.isPassado : false;
+                    const temDisponibilidade = !isPassado && disponivel > 0;
+                %>
+                    <div class="rounded-lg p-3 min-h-[100px] text-center <%= temDisponibilidade ? 'bg-green-500 hover:bg-green-600 cursor-pointer text-white' : (isPassado ? 'bg-gray-300 text-gray-500' : 'bg-red-500 text-white') %>">
+                        <div class="font-bold text-lg"><%= dia %></div>
+                        <div class="text-sm mt-2">
+                            <% if (temDisponibilidade) { %>
+                                <%= disponivel %> disponível
+                            <% } else if (isPassado) { %>
+                                Passado
+                            <% } else { %>
+                                Ocupado
+                            <% } %>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+            
+            <div class="flex justify-center gap-6 mt-6 text-sm">
+                <div class="flex items-center"><div class="w-5 h-5 bg-green-500 rounded mr-2"></div> Disponível</div>
+                <div class="flex items-center"><div class="w-5 h-5 bg-red-500 rounded mr-2"></div> Ocupado</div>
+                <div class="flex items-center"><div class="w-5 h-5 bg-gray-300 rounded mr-2"></div> Passado</div>
+            </div>
+        </div>
+        
+        <!-- Comentários -->
+        <div class="border-t p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Avaliações dos Clientes</h2>
+                <% if (user && user.tipo === 'cliente') { %>
+                    <button onclick="toggleFormComentario()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                        Escrever Avaliação
+                    </button>
+                <% } %>
+            </div>
+            
+            <div id="formComentario" class="hidden bg-gray-50 rounded-lg p-4 mb-6">
+                <form onsubmit="enviarComentario(event)">
+                    <textarea id="comentarioTexto" rows="3" class="w-full px-3 py-2 border rounded-lg mb-3" placeholder="Escreva sua avaliação sobre este brinquedo..."></textarea>
+                    <div class="flex items-center gap-4 mb-3">
+                        <span class="font-medium">Sua nota:</span>
+                        <div class="rating-input flex flex-row-reverse justify-end gap-2">
+                            <input type="radio" name="estrelas" value="5" id="star5"><label for="star5" class="text-2xl cursor-pointer">★</label>
+                            <input type="radio" name="estrelas" value="4" id="star4"><label for="star4" class="text-2xl cursor-pointer">★</label>
+                            <input type="radio" name="estrelas" value="3" id="star3"><label for="star3" class="text-2xl cursor-pointer">★</label>
+                            <input type="radio" name="estrelas" value="2" id="star2"><label for="star2" class="text-2xl cursor-pointer">★</label>
+                            <input type="radio" name="estrelas" value="1" id="star1"><label for="star1" class="text-2xl cursor-pointer">★</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Enviar Avaliação</button>
+                    <button type="button" onclick="toggleFormComentario()" class="ml-2 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400">Cancelar</button>
+                </form>
+            </div>
+            
+            <div class="space-y-4">
+                <% if (comentarios.length === 0) { %>
+                    <p class="text-gray-500 text-center py-8">Seja o primeiro a avaliar este brinquedo!</p>
+                <% } else { %>
+                    <% comentarios.forEach(comentario => { %>
+                        <div class="border rounded-lg p-4 bg-white">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="font-semibold text-gray-800"><%= comentario.usuario_id.nome %></span>
+                                        <div class="flex">
+                                            <% for(let i = 1; i <= 5; i++) { %>
+                                                <span class="text-<%= i <= comentario.estrelas ? 'yellow-400' : 'gray-300' %>">★</span>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                    <span class="text-xs text-gray-500"><%= moment(comentario.data).format('DD/MM/YYYY HH:mm') %></span>
+                                </div>
+                                <% if (user && (user.id === comentario.usuario_id._id.toString() || user.tipo === 'admin')) { %>
+                                    <button onclick="excluirComentario('<%= comentario._id %>')" class="text-red-500 hover:text-red-700 text-sm">
+                                        Excluir
+                                    </button>
+                                <% } %>
+                            </div>
+                            <p class="text-gray-700 mt-2"><%= comentario.texto %></p>
+                        </div>
+                    <% }) %>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let indiceAtual = 0;
+const totalImagens = <%= brinquedo.imagens ? brinquedo.imagens.length : 0 %>;
+
+function mudarImagem(direcao) {
+    if (totalImagens <= 1) return;
+    indiceAtual = (indiceAtual + direcao + totalImagens) % totalImagens;
+    atualizarCarrossel();
+    atualizarMiniaturas();
+}
+
+function irParaImagem(index) {
+    indiceAtual = index;
+    atualizarCarrossel();
+    atualizarMiniaturas();
+}
+
+function atualizarCarrossel() {
+    const container = document.getElementById('carrosselContainer');
+    if (container) {
+        container.style.transform = `translateX(-${indiceAtual * 100}%)`;
+    }
+}
+
+function atualizarMiniaturas() {
+    const miniaturas = document.querySelectorAll('.miniatura');
+    miniaturas.forEach((thumb, index) => {
+        if (index === indiceAtual) {
+            thumb.classList.add('border-blue-500');
+            thumb.classList.remove('border-gray-300');
+        } else {
+            thumb.classList.add('border-gray-300');
+            thumb.classList.remove('border-blue-500');
+        }
+    });
+}
+
+function adicionarAoCarrinho() {
+    const quantidade = parseInt(document.getElementById('quantidade').value);
+    const id = '<%= brinquedo._id %>';
+    const nome = '<%= brinquedo.nome %>';
+    const preco = <%= brinquedo.preco_diaria %>;
+    const estoque = <%= brinquedo.quantidade_estoque %>;
+    
+    if (quantidade < 1 || quantidade > estoque) {
+        alert('Quantidade inválida');
+        return;
+    }
+    
+    let carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
+    const itemExistente = carrinho.find(item => item.id === id);
+    
+    if (itemExistente) {
+        if (itemExistente.quantidade + quantidade > estoque) {
+            alert('Quantidade excede o estoque disponível');
+            return;
+        }
+        itemExistente.quantidade += quantidade;
+        itemExistente.subtotal = itemExistente.quantidade * preco;
+    } else {
+        carrinho.push({ id, nome, preco_diaria: preco, quantidade, subtotal: quantidade * preco });
+    }
+    
+    localStorage.setItem('carrinho', JSON.stringify(carrinho));
+    alert(`${quantidade}x ${nome} adicionado ao carrinho!`);
+}
+
+function toggleFormComentario() {
+    document.getElementById('formComentario').classList.toggle('hidden');
+}
+
+async function enviarComentario(event) {
+    event.preventDefault();
+    const texto = document.getElementById('comentarioTexto').value;
+    const estrelasInput = document.querySelector('input[name="estrelas"]:checked');
+    
+    if (!texto.trim()) return alert('Escreva um comentário');
+    if (!estrelasInput) return alert('Selecione uma nota');
+    
+    showLoading();
+    try {
+        const response = await fetch('/cliente/avaliar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                brinquedo_id: '<%= brinquedo._id %>',
+                texto: texto,
+                estrelas: estrelasInput.value
+            })
+        });
+        const data = await response.json();
+        if (data.success) {
+            alert('Avaliação enviada!');
+            location.reload();
+        } else alert(data.error);
+    } catch (error) { alert('Erro ao enviar'); }
+    finally { hideLoading(); }
+}
+
+async function excluirComentario(id) {
+    if (!confirm('Excluir este comentário?')) return;
+    showLoading();
+    try {
+        const response = await fetch(`/cliente/excluir-comentario/${id}`, { method: 'DELETE' });
+        const data = await response.json();
+        if (data.success) { alert('Comentário excluído!'); location.reload(); }
+        else alert('Erro ao excluir');
+    } catch (error) { alert('Erro ao excluir'); }
+    finally { hideLoading(); }
+}
+</script>
+
+<style>
+.rating-input input { display: none; }
+.rating-input label { cursor: pointer; font-size: 28px; color: #ddd; transition: color 0.2s; }
+.rating-input input:checked ~ label { color: #ffc107; }
+.rating-input label:hover, .rating-input label:hover ~ label { color: #ffc107; }
+</style>
+
+<%- include('partials/footer') %>

@@ -8,7 +8,8 @@ const UsuarioSchema = new mongoose.Schema({
     email: {
         type: String,
         required: true,
-        unique: true
+        unique: true,
+        lowercase: true
     },
     senha: {
         type: String,
@@ -27,13 +28,8 @@ const UsuarioSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
-    // 🔧 NOVOS CAMPOS PARA RECUPERAÇÃO DE SENHA
-    resetToken: {
-        type: String
-    },
-    resetTokenExpiry: {
-        type: Date
-    }
+    resetToken: String,
+    resetTokenExpiry: Date
 });
 
 module.exports = mongoose.model('Usuario', UsuarioSchema);

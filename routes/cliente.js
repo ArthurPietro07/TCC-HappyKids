@@ -1,333 +1,233 @@
 const express = require('express');
+const router = express.Router();
+const auth = require('../middlewares/auth');
 const Aluguel = require('../models/Aluguel');
 const Brinquedo = require('../models/Brinquedo');
-const { isAuthenticated, isCliente } = require('../middlewares/auth');
-const router = express.Router();
+const Comentario = require('../models/Comentario');
+const Usuario = require('../models/Usuario');
 
-// Middleware para verificar autenticação
-router.use(isAuthenticated);
-router.use(isCliente);
+// Funções auxiliares para formatação de datas
+function formatarData(data) {
+    if (!data) return '';
+    const d = new Date(data);
+    return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+}
+
+function formatarDataHora(data) {
+    if (!data) return '';
+    const d = new Date(data);
+    return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+}
+
+router.use(auth.isAuthenticated);
+router.use(auth.isCliente);
 
 // Meus aluguéis
 router.get('/meus-alugueis', async (req, res) => {
-  try {
-    const alugueis = await Aluguel.find({ usuario_id: req.session.usuario.id })
-      .populate('itens.brinquedo_id')
-      .sort({ data_pedido: -1 });
+    try {
+        const alugueis = await Aluguel.find({ usuario_id: req.session.user.id })
+            .sort({ data_pedido: -1 })
+            .populate('itens.brinquedo_id');
+        
+        res.render('cliente/meus-alugueis', { 
+            alugueis, 
+            formatarData, 
+            formatarDataHora
+        });
+    } catch (error) {
+        console.error(error);
+        res.render('error', { message: 'Erro ao carregar aluguéis', error: {} });
+    }
+});
 
-    res.render('cliente/meus-alugueis', { alugueis });
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('Erro ao carregar aluguéis');
-  }
+// Cancelar aluguel
+router.post('/cancelar/:id', async (req, res) => {
+    try {
+        const aluguel = await Aluguel.findOne({
+            _id: req.params.id,
+            usuario_id: req.session.user.id
+        });
+        
+        if (!aluguel) {
+            return res.status(404).json({ error: 'Aluguel não encontrado' });
+        }
+        
+        if (aluguel.status !== 'aguardando_pagamento' && aluguel.status !== 'pago') {
+            return res.status(400).json({ error: 'Este aluguel não pode ser cancelado' });
+        }
+        
+        aluguel.status = 'cancelado';
+        await aluguel.save();
+        
+        res.json({ success: true });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erro ao cancelar aluguel' });
+    }
 });
 
 // Carrinho
 router.get('/carrinho', (req, res) => {
-  res.render('cliente/carrinho');
+    res.render('cliente/carrinho');
 });
 
-// Verificar disponibilidade - CORRIGIDO
-router.post('/verificar-disponibilidade', async (req, res) => {
-    const { brinquedoId, dataInicio, dataFim, quantidade } = req.body;
-
+// Finalizar aluguel
+router.post('/finalizar', async (req, res) => {
     try {
-        const brinquedo = await Brinquedo.findById(brinquedoId);
-        if (!brinquedo) {
-            return res.json({ disponivel: false, message: 'Brinquedo não encontrado' });
+        const { itens, data_inicio, data_fim, hora_entrega, forma_pagamento, endereco_entrega, valor_total } = req.body;
+        
+        const itensParse = JSON.parse(itens);
+        const inicio = new Date(data_inicio);
+        const fim = new Date(data_fim);
+        
+        if (inicio > fim) {
+            return res.status(400).json({ error: 'Data de início não pode ser maior que data de fim' });
         }
-
-        // Ajustar datas para o início e fim do dia
-        const inicio = new Date(dataInicio);
-        inicio.setHours(0, 0, 0, 0);
         
-        const fim = new Date(dataFim);
-        fim.setHours(23, 59, 59, 999);
+        const itensParaSalvar = [];
         
-        // Buscar TODOS os aluguéis que ocupam QUALQUER dia do período
-        const alugueisConflitantes = await Aluguel.find({
-            'itens.brinquedo_id': brinquedoId,
-            status: { $in: ['reservado', 'ativo', 'aguardando_pagamento', 'pago'] },
-            data_inicio: { $lte: fim },
-            data_fim: { $gte: inicio }
-        });
-
-        // Verificar DIA A DIA com precisão
-        let dataAtual = new Date(inicio);
-        let indisponivel = false;
-        let mensagemErro = '';
-        let diasOcupadosDetalhe = [];
-        
-        while (dataAtual <= fim) {
-            // Criar limites do dia atual
-            const inicioDia = new Date(dataAtual);
-            inicioDia.setHours(0, 0, 0, 0);
+        for (const item of itensParse) {
+            const brinquedo = await Brinquedo.findById(item.id);
+            if (!brinquedo) {
+                return res.status(400).json({ error: `Brinquedo ${item.nome} não encontrado` });
+            }
             
-            const fimDia = new Date(dataAtual);
-            fimDia.setHours(23, 59, 59, 999);
+            const alugueisConflitantes = await Aluguel.find({
+                'itens.brinquedo_id': item.id,
+                status: { $in: ['pago', 'ativo'] },
+                data_inicio: { $lte: fim },
+                data_fim: { $gte: inicio }
+            });
             
-            let quantidadeNoDia = 0;
-            const dataStr = dataAtual.toISOString().split('T')[0];
-            
+            let totalReservado = 0;
             for (const aluguel of alugueisConflitantes) {
-                const inicioAluguel = new Date(aluguel.data_inicio);
-                const fimAluguel = new Date(aluguel.data_fim);
-                
-                // Verifica se o dia atual está dentro do período do aluguel
-                if (inicioDia <= fimAluguel && fimDia >= inicioAluguel) {
-                    for (const item of aluguel.itens) {
-                        if (item.brinquedo_id.toString() === brinquedoId) {
-                            quantidadeNoDia += item.quantidade;
-                        }
+                for (const itemAluguel of aluguel.itens) {
+                    if (itemAluguel.brinquedo_id.toString() === item.id) {
+                        totalReservado += itemAluguel.quantidade;
                     }
                 }
             }
             
-            const disponivelNoDia = brinquedo.quantidade_estoque - quantidadeNoDia;
-            const quantidadeSolicitada = quantidade || 1;
+            const disponivel = brinquedo.quantidade_estoque - totalReservado;
             
-            if (disponivelNoDia < quantidadeSolicitada) {
-                indisponivel = true;
-                mensagemErro = `❌ Dia ${dataAtual.toLocaleDateString('pt-BR')}: apenas ${disponivelNoDia} unidade(s) disponível(is) (estoque total: ${brinquedo.quantidade_estoque})`;
-                break;
+            if (item.quantidade > disponivel) {
+                return res.status(400).json({ 
+                    error: `${brinquedo.nome}: Quantidade indisponível para o período. Disponível: ${disponivel} unidade(s)` 
+                });
             }
             
-            if (quantidadeNoDia > 0) {
-                diasOcupadosDetalhe.push({ data: dataStr, quantidade: quantidadeNoDia });
-            }
-            
-            dataAtual.setDate(dataAtual.getDate() + 1);
-        }
-        
-        if (indisponivel) {
-            return res.json({
-                disponivel: false,
-                estoqueTotal: brinquedo.quantidade_estoque,
-                message: mensagemErro
+            itensParaSalvar.push({
+                brinquedo_id: item.id,
+                nome_brinquedo: brinquedo.nome,
+                quantidade: item.quantidade,
+                preco_diaria: brinquedo.preco_diaria,
+                subtotal: item.subtotal
             });
         }
         
-        let mensagem = '';
-        if (diasOcupadosDetalhe.length === 0) {
-            mensagem = `✅ Disponível! ${brinquedo.quantidade_estoque} unidade(s) disponíveis no período`;
-        } else {
-            mensagem = `✅ Disponível! Atenção: ${diasOcupadosDetalhe.length} dia(s) com ocupação parcial. Estoque total: ${brinquedo.quantidade_estoque}`;
-        }
-        
-        res.json({
-            disponivel: true,
-            estoqueTotal: brinquedo.quantidade_estoque,
-            diasOcupados: diasOcupadosDetalhe,
-            message: mensagem
+        const novoAluguel = new Aluguel({
+            usuario_id: req.session.user.id,
+            data_inicio: inicio,
+            data_fim: fim,
+            hora_entrega,
+            valor_total: parseFloat(valor_total),
+            forma_pagamento,
+            endereco_entrega,
+            itens: itensParaSalvar
         });
+        
+        await novoAluguel.save();
+        
+        res.json({ success: true, aluguelId: novoAluguel._id });
+    } catch (error) {
+        console.error('Erro ao finalizar aluguel:', error);
+        res.status(500).json({ error: 'Erro ao finalizar aluguel' });
+    }
+});
+
+// Perfil
+router.get('/perfil', async (req, res) => {
+    try {
+        const usuario = await Usuario.findById(req.session.user.id);
+        res.render('perfil', { usuario, formatarData });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Erro ao verificar disponibilidade' });
+        res.render('error', { message: 'Erro ao carregar perfil', error: {} });
     }
 });
 
-// Finalizar pedido - CORRIGIDO
-router.post('/finalizar-pedido', async (req, res) => {
-  const { itens, dataInicio, dataFim, horaEntrega, formaPagamento, enderecoEntrega } = req.body;
+router.post('/perfil', async (req, res) => {
+    try {
+        const { nome, telefone } = req.body;
+        await Usuario.findByIdAndUpdate(req.session.user.id, { nome, telefone });
+        req.session.user.nome = nome;
+        req.session.success = 'Perfil atualizado com sucesso';
+        res.redirect('/cliente/perfil');
+    } catch (error) {
+        console.error(error);
+        req.session.error = 'Erro ao atualizar perfil';
+        res.redirect('/cliente/perfil');
+    }
+});
 
-  if (!itens || itens.length === 0) {
-    return res.json({ success: false, message: 'Carrinho vazio' });
-  }
-
-  if (!dataInicio || !dataFim) {
-    return res.json({ success: false, message: 'Datas não informadas' });
-  }
-
-  try {
-    // Ajustar datas para o início e fim do dia no fuso horário do Brasil
-    const inicio = new Date(dataInicio);
-    inicio.setHours(0, 0, 0, 0);
-    
-    const fim = new Date(dataFim);
-    fim.setHours(23, 59, 59, 999);
-    
-    let valorTotal = 0;
-    const itensFormatados = [];
-
-    for (const item of itens) {
-      const brinquedoId = item.id || item._id;
-      
-      if (!brinquedoId) {
-        return res.json({ success: false, message: `Item ${item.nome} não tem ID válido` });
-      }
-
-      const brinquedo = await Brinquedo.findById(brinquedoId);
-      
-      if (!brinquedo) {
-        return res.json({ success: false, message: `Brinquedo ${item.nome} não encontrado` });
-      }
-
-      // Verificar DIA A DIA com precisão de data
-      let dataAtual = new Date(inicio);
-      let indisponivel = false;
-      let mensagemErro = '';
-      
-      while (dataAtual <= fim) {
-        // Criar data do início e fim do dia atual
-        const inicioDia = new Date(dataAtual);
-        inicioDia.setHours(0, 0, 0, 0);
+// Avaliações
+router.post('/avaliar', async (req, res) => {
+    try {
+        const { brinquedo_id, texto, estrelas } = req.body;
         
-        const fimDia = new Date(dataAtual);
-        fimDia.setHours(23, 59, 59, 999);
+        if (!texto || texto.trim() === '') {
+            return res.status(400).json({ error: 'Por favor, escreva um comentário' });
+        }
         
-        const alugueisNoDia = await Aluguel.find({
-          'itens.brinquedo_id': brinquedoId,
-          status: { $in: ['reservado', 'ativo', 'aguardando_pagamento', 'pago'] },
-          data_inicio: { $lte: fimDia },
-          data_fim: { $gte: inicioDia }
+        if (!estrelas || estrelas < 1 || estrelas > 5) {
+            return res.status(400).json({ error: 'Selecione uma quantidade de estrelas' });
+        }
+        
+        const avaliacaoExistente = await Comentario.findOne({
+            brinquedo_id,
+            usuario_id: req.session.user.id
         });
         
-        let quantidadeNoDia = 0;
-        for (const aluguel of alugueisNoDia) {
-          for (const itemAluguel of aluguel.itens) {
-            if (itemAluguel.brinquedo_id.toString() === brinquedoId) {
-              quantidadeNoDia += itemAluguel.quantidade;
-            }
-          }
+        if (avaliacaoExistente) {
+            return res.status(400).json({ error: 'Você já avaliou este brinquedo' });
         }
         
-        const disponivelNoDia = brinquedo.quantidade_estoque - quantidadeNoDia;
+        const comentario = new Comentario({
+            brinquedo_id,
+            usuario_id: req.session.user.id,
+            texto: texto.trim(),
+            estrelas: parseInt(estrelas),
+            data: new Date(),
+            status: 'aprovado'
+        });
         
-        if (disponivelNoDia < item.quantidade) {
-          indisponivel = true;
-          mensagemErro = `"${brinquedo.nome}" indisponível para o dia ${dataAtual.toLocaleDateString('pt-BR')}. Disponível: ${disponivelNoDia} unidade(s), mas você solicitou ${item.quantidade}`;
-          break;
-        }
-        
-        dataAtual.setDate(dataAtual.getDate() + 1);
-      }
-      
-      if (indisponivel) {
-        return res.json({ success: false, message: mensagemErro });
-      }
-
-      const precoUnitario = brinquedo.preco_diaria;
-      const subtotal = precoUnitario * item.quantidade;
-      valorTotal += subtotal;
-
-      itensFormatados.push({
-        brinquedo_id: brinquedo._id,
-        quantidade: item.quantidade,
-        preco_unitario: precoUnitario
-      });
+        await comentario.save();
+        res.json({ success: true });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erro ao enviar avaliação' });
     }
-
-    const novoAluguel = new Aluguel({
-      usuario_id: req.session.usuario.id,
-      data_inicio: inicio,
-      data_fim: fim,
-      hora_entrega: horaEntrega || '08:00',
-      periodo_tipo: 'diaria',
-      valor_total: valorTotal,
-      forma_pagamento: formaPagamento,
-      itens: itensFormatados,
-      status: 'aguardando_pagamento',
-      pagamento_confirmado: false,
-      endereco_entrega: enderecoEntrega || ''
-    });
-
-    await novoAluguel.save();
-
-    console.log(`📧 Pedido #${novoAluguel._id} criado por ${req.session.usuario.email}`);
-    
-    res.json({ success: true, message: 'Pedido realizado com sucesso!' });
-    
-  } catch (error) {
-    console.error('Erro ao finalizar pedido:', error);
-    res.json({ success: false, message: 'Erro interno ao processar pedido' });
-  }
 });
 
-// Cancelar pedido (Cliente)
-router.post('/cancelar/:id', async (req, res) => {
-  try {
-    const aluguel = await Aluguel.findOne({ 
-      _id: req.params.id, 
-      usuario_id: req.session.usuario.id 
-    });
-
-    if (!aluguel) {
-      return res.status(404).json({ success: false, message: 'Pedido não encontrado' });
-    }
-
-    if (aluguel.status === 'cancelado') {
-      return res.status(400).json({ success: false, message: 'Pedido já está cancelado' });
-    }
-
-    aluguel.status = 'cancelado';
-    await aluguel.save();
-
-    res.json({ success: true, message: 'Pedido cancelado com sucesso!' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Erro ao cancelar pedido' });
-  }
-});
-
-// Buscar dias indisponíveis - IGNORAR CANCELADOS
-router.get('/dias-indisponiveis/:brinquedoId', async (req, res) => {
-  const { brinquedoId } = req.params;
-
-  try {
-    const brinquedo = await Brinquedo.findById(brinquedoId);
-    if (!brinquedo) {
-      return res.status(404).json({ error: 'Brinquedo não encontrado' });
-    }
-
-    const alugueis = await Aluguel.find({
-      'itens.brinquedo_id': brinquedoId,
-      status: { $in: ['reservado', 'ativo', 'aguardando_pagamento', 'pago'] }
-    });
-
-    // Mapear dias com quantidade ocupada
-    const diasOcupadosMap = {};
-
-    alugueis.forEach(aluguel => {
-      // Ajustar datas para início e fim do dia
-      const inicioDia = new Date(aluguel.data_inicio);
-      inicioDia.setHours(0, 0, 0, 0);
-      
-      const fimDia = new Date(aluguel.data_fim);
-      fimDia.setHours(23, 59, 59, 999);
-      
-      let dataAtual = new Date(inicioDia);
-      
-      while (dataAtual <= fimDia) {
-        const dataStr = dataAtual.toISOString().split('T')[0];
+// Excluir próprio comentário
+router.delete('/excluir-comentario/:id', async (req, res) => {
+    try {
+        const comentario = await Comentario.findById(req.params.id);
         
-        if (!diasOcupadosMap[dataStr]) {
-          diasOcupadosMap[dataStr] = 0;
+        if (!comentario) {
+            return res.status(404).json({ error: 'Comentário não encontrado' });
         }
-
-        for (const item of aluguel.itens) {
-          if (item.brinquedo_id.toString() === brinquedoId) {
-            diasOcupadosMap[dataStr] += item.quantidade;
-          }
+        
+        if (comentario.usuario_id.toString() !== req.session.user.id && req.session.user.tipo !== 'admin') {
+            return res.status(403).json({ error: 'Sem permissão' });
         }
-
-        dataAtual.setDate(dataAtual.getDate() + 1);
-      }
-    });
-
-    // Dias totalmente indisponíveis (estoque zerado)
-    const diasIndisponiveis = [];
-    
-    for (const [data, quantidadeOcupada] of Object.entries(diasOcupadosMap)) {
-      if (quantidadeOcupada >= brinquedo.quantidade_estoque) {
-        diasIndisponiveis.push(data);
-      }
+        
+        await Comentario.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erro ao excluir comentário' });
     }
-
-    res.json({ diasIndisponiveis, diasOcupadosMap });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Erro ao buscar dias indisponíveis' });
-  }
 });
 
 module.exports = router;

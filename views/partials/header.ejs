@@ -1,148 +1,52 @@
 <!DOCTYPE html>
-<html lang="pt-br">
-
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HappyKids - Aluguel de Brinquedos</title>
+    <title>HappyKids - Locação de Brinquedos</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
     <style>
-        .nav-glass {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-        }
-
-        .mobile-menu {
-            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
-            overflow: hidden;
-            max-height: 0;
-            opacity: 0;
-        }
-
-        .mobile-menu.open {
-            max-height: 500px;
-            opacity: 1;
-        }
-
-        .dropdown-content {
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.2s ease;
-        }
-
-        .dropdown:hover .dropdown-content {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
+        .rating-input { display: inline-flex; flex-direction: row-reverse; gap: 5px; }
+        .rating-input input { display: none; }
+        .rating-input label { cursor: pointer; font-size: 24px; color: #ddd; }
+        .rating-input input:checked ~ label { color: #ffc107; }
+        .rating-input label:hover, .rating-input label:hover ~ label { color: #ffc107; }
+        .loading { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; }
     </style>
 </head>
-
-<body class="bg-slate-50 min-h-screen flex flex-col">
-    <nav class="nav-glass sticky top-0 z-50 border-b border-slate-200 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <a href="/"
-                    class="flex items-center gap-2 text-2xl font-bold text-blue-600 hover:text-blue-700 transition">
-                    <i class="ri-balloon-fill text-3xl"></i><span>HappyKids</span>
-                </a>
-
-                <div class="hidden md:flex items-center space-x-6">
-                    <a href="/" class="text-slate-600 hover:text-blue-600 font-medium transition">🏠 Início</a>
-                    <a href="/catalogo" class="text-slate-600 hover:text-blue-600 font-medium transition">📦
-                        Catálogo</a>
-                    <% if (usuario) { %>
-                        <% if (usuario.tipo==='admin' ) { %>
-                            <a href="/admin/dashboard"
-                                class="text-slate-600 hover:text-blue-600 font-medium transition">📊 Admin</a>
-                            <% } else { %>
-                                <a href="/cliente/meus-alugueis"
-                                    class="text-slate-600 hover:text-blue-600 font-medium transition">📋 Meus
-                                    Aluguéis</a>
-                                <% } %>
-                                    <a href="/perfil"
-                                        class="text-slate-600 hover:text-blue-600 font-medium transition">👤 Perfil</a>
-                                    <% } %>
-                </div>
-
-                <div class="flex items-center gap-3">
-                    <% if (usuario) { %>
-                        <% if (usuario.tipo==='cliente' ) { %>
-                            <a href="/cliente/carrinho"
-                                class="relative p-2 text-slate-600 hover:text-blue-600 transition">
-                                <i class="ri-shopping-cart-line text-xl"></i>
-                                <span id="carrinhoCount"
-                                    class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full hidden">0</span>
-                            </a>
-                            <% } %>
-                                <div class="relative dropdown">
-                                    <button
-                                        class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 transition">
-                                        <div
-                                            class="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">
-                                            <%= usuario.nome.charAt(0).toUpperCase() %>
-                                        </div>
-                                        <span class="hidden md:inline text-sm font-medium text-slate-700">
-                                            <%= usuario.nome %>
-                                        </span>
-                                        <i class="ri-arrow-down-s-line text-slate-400"></i>
-                                    </button>
-                                    <div
-                                        class="dropdown-content absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-2 z-50">
-                                        <a href="/perfil"
-                                            class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">👤 Meu
-                                            Perfil</a>
-                                        <% if (usuario.tipo==='cliente' ) { %>
-                                            <a href="/cliente/carrinho"
-                                                class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">🛒
-                                                Carrinho</a>
-                                            <% } %>
-                                                <hr class="my-1 border-slate-100">
-                                                <a href="/logout"
-                                                    class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">🚪
-                                                    Sair</a>
-                                    </div>
-                                </div>
-                                <% } else { %>
-                                    <a href="/login"
-                                        class="text-sm font-medium text-slate-600 hover:text-blue-600 px-3 py-2 rounded-lg hover:bg-slate-100 transition">Entrar</a>
-                                    <a href="/cadastro"
-                                        class="bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-blue-700 transition shadow-md">Cadastre-se</a>
-                                    <% } %>
-                                        <button id="menuBtn" class="md:hidden p-2 text-slate-600 hover:text-blue-600"><i
-                                                class="ri-menu-line text-xl"></i></button>
-                </div>
-            </div>
-            <div id="mobileMenu" class="mobile-menu md:hidden border-t border-slate-100 bg-white">
-                <div class="px-4 py-3 space-y-2">
-                    <a href="/" class="block px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50">🏠 Início</a>
-                    <a href="/catalogo" class="block px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50">📦
-                        Catálogo</a>
-                    <% if (usuario) { %>
-                        <a href="/perfil" class="block px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50">👤
-                            Perfil</a>
-                        <% if (usuario.tipo==='admin' ) { %>
-                            <a href="/admin/dashboard"
-                                class="block px-3 py-2 rounded-lg text-blue-600 font-medium bg-blue-50">📊 Painel
-                                Admin</a>
-                            <% } else { %>
-                                <a href="/cliente/meus-alugueis"
-                                    class="block px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50">📋 Meus
-                                    Aluguéis</a>
-                                <a href="/cliente/carrinho"
-                                    class="block px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50">🛒 Carrinho</a>
-                                <% } %>
-                                    <a href="/logout" class="block px-3 py-2 rounded-lg text-red-600 hover:bg-red-50">🚪
-                                        Sair</a>
-                                    <% } else { %>
-                                        <a href="/login"
-                                            class="block px-3 py-2 rounded-lg text-blue-600 font-medium bg-blue-50">Entrar</a>
-                                        <% } %>
+<body class="bg-gray-100">
+    <nav class="bg-blue-600 text-white shadow-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="text-2xl font-bold">HappyKids</a>
+                <div class="space-x-4">
+                    <a href="/catalogo" class="hover:text-blue-200 transition">Catálogo</a>
+                    <% if (user) { %>
+                        <% if (user.tipo === 'admin') { %>
+                            <a href="/admin/dashboard" class="hover:text-blue-200 transition">Admin</a>
+                        <% } else { %>
+                            <a href="/cliente/meus-alugueis" class="hover:text-blue-200 transition">Meus Aluguéis</a>
+                            <a href="/cliente/carrinho" class="hover:text-blue-200 transition">Carrinho</a>
+                            <a href="/cliente/perfil" class="hover:text-blue-200 transition">Perfil</a>
+                        <% } %>
+                        <a href="/auth/logout" class="bg-red-500 px-4 py-2 rounded hover:bg-red-600 transition">Sair</a>
+                    <% } else { %>
+                        <a href="/auth/login" class="bg-green-500 px-4 py-2 rounded hover:bg-green-600 transition">Entrar</a>
+                        <a href="/auth/cadastro" class="bg-blue-500 px-4 py-2 rounded hover:bg-blue-600 transition">Cadastrar</a>
+                    <% } %>
                 </div>
             </div>
         </div>
     </nav>
-    <main class="flex-grow">
+    <main class="container mx-auto px-4 py-8">
+        <% if (locals.success) { %>
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                <%= success %>
+            </div>
+        <% } %>
+        <% if (locals.error) { %>
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <%= error %>
+            </div>
+        <% } %>

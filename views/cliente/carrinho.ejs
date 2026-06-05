@@ -1,190 +1,185 @@
-<%- include('../partials/header.ejs') %>
-<section class="max-w-7xl mx-auto px-4 py-10 fade-in">
-  <h1 class="text-3xl font-bold text-slate-800 mb-8">🛒 Meu Carrinho</h1>
-  <div class="grid lg:grid-cols-3 gap-8">
-    <div class="lg:col-span-2">
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6" id="itensCarrinho"></div>
-    </div>
-    <div class="lg:col-span-1">
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sticky top-24">
-        <h2 class="text-xl font-bold text-slate-800 mb-4">📋 Resumo do Pedido</h2>
-        <div class="space-y-3 mb-6 pb-6 border-b border-slate-100">
-          <div class="flex justify-between text-slate-600"><span>Subtotal:</span><span id="subtotal">R$ 0,00</span></div>
-          <div class="flex justify-between text-xl font-bold text-slate-800"><span>Total:</span><span id="total">R$ 0,00</span></div>
+<%- include('../partials/header') %>
+
+<h1 class="text-3xl font-bold mb-6">Meu Carrinho</h1>
+
+<div id="carrinhoVazio" class="hidden bg-white rounded-lg shadow-md p-8 text-center">
+    <p class="text-gray-600">Seu carrinho está vazio.</p>
+    <a href="/catalogo" class="mt-4 inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Ver Catálogo</a>
+</div>
+
+<div id="carrinhoConteudo" class="hidden">
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div id="itensCarrinho"></div>
+        
+        <div class="border-t pt-4 mt-4">
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-xl font-bold">Total:</span>
+                <span id="totalCarrinho" class="text-2xl font-bold text-blue-600">R$ 0,00</span>
+            </div>
         </div>
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">💳 Forma de Pagamento</label>
-            <select id="formaPagamento" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500">
-              <option value="dinheiro">💰 Dinheiro</option>
-              <option value="pix">📱 PIX</option>
-              <option value="cartao">💳 Cartão de Crédito</option>
-              <option value="pagar_retirada">🏪 Pagar na Retirada</option>
-            </select>
-          </div>
-          <div id="avisoDinheiro" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">
-            ⚠️ Pagamento em dinheiro será confirmado pelo administrador no ato da retirada.
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">📍 Endereço de Entrega</label>
-            <textarea id="enderecoEntrega" rows="3" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500" placeholder="Rua, número, bairro, cidade, CEP..."></textarea>
-            <p class="text-xs text-slate-500 mt-1">Informe o endereço completo onde o brinquedo será utilizado</p>
-          </div>
-          <button onclick="finalizarPedido(event)" class="w-full bg-blue-600 text-white py-4 rounded-xl hover:bg-blue-700 transition font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">✅ Finalizar Pedido</button>
-        </div>
-      </div>
     </div>
-  </div>
-</section>
+    
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-xl font-bold mb-4">Finalizar Pedido</h3>
+        
+        <form id="formFinalizar">
+            <div class="mb-4">
+                <label class="block text-gray-700 mb-2">Data de Início</label>
+                <input type="date" id="dataInicio" required class="w-full px-3 py-2 border rounded-lg">
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 mb-2">Data de Fim</label>
+                <input type="date" id="dataFim" required class="w-full px-3 py-2 border rounded-lg">
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 mb-2">Horário de Entrega</label>
+                <select id="horaEntrega" required class="w-full px-3 py-2 border rounded-lg">
+                    <option value="">Selecione</option>
+                    <option value="08:00">08:00</option>
+                    <option value="09:00">09:00</option>
+                    <option value="10:00">10:00</option>
+                    <option value="11:00">11:00</option>
+                    <option value="12:00">12:00</option>
+                    <option value="13:00">13:00</option>
+                    <option value="14:00">14:00</option>
+                    <option value="15:00">15:00</option>
+                    <option value="16:00">16:00</option>
+                    <option value="17:00">17:00</option>
+                    <option value="18:00">18:00</option>
+                    <option value="19:00">19:00</option>
+                    <option value="20:00">20:00</option>
+                </select>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 mb-2">Forma de Pagamento</label>
+                <select id="formaPagamento" required class="w-full px-3 py-2 border rounded-lg">
+                    <option value="">Selecione</option>
+                    <option value="dinheiro">Dinheiro (pago na entrega)</option>
+                    <option value="pix">PIX (pago antecipadamente)</option>
+                </select>
+            </div>
+            
+            <div class="mb-6">
+                <label class="block text-gray-700 mb-2">Endereço de Entrega</label>
+                <textarea id="endereco" required rows="3" class="w-full px-3 py-2 border rounded-lg" placeholder="Rua, número, bairro, cidade, CEP"></textarea>
+            </div>
+            
+            <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold">
+                Confirmar Pedido
+            </button>
+        </form>
+    </div>
+</div>
+
 <script>
-let carrinho = [];
-function getDataAtualBrasil() {
-const agora = new Date();
-const offsetBrasil = -3;
-const utc = agora.getTime() + (agora.getTimezoneOffset() * 60000);
-return new Date(utc + (3600000 * offsetBrasil));
-}
-document.getElementById('formaPagamento').addEventListener('change', function () {
-const aviso = document.getElementById('avisoDinheiro');
-if (this.value === 'dinheiro') {
-aviso.classList.remove('hidden');
-} else {
-aviso.classList.add('hidden');
-}
-});
+let carrinhoAtual = [];
+
 function carregarCarrinho() {
-carrinho = JSON.parse(localStorage.getItem('carrinho') || '[]');
-const container = document.getElementById('itensCarrinho');
-if (carrinho.length === 0) {
-container.innerHTML = '<div class="text-center py-12"><p class="text-slate-500 mb-4">🛒 Seu carrinho está vazio.</p><a href="/catalogo" class="text-blue-600 hover:underline font-medium">Ver brinquedos</a></div>';
-document.getElementById('subtotal').innerText = 'R$ 0,00';
-document.getElementById('total').innerText = 'R$ 0,00';
-return;
+    carrinhoAtual = JSON.parse(localStorage.getItem('carrinho') || '[]');
+    
+    if (carrinhoAtual.length === 0) {
+        document.getElementById('carrinhoVazio').classList.remove('hidden');
+        document.getElementById('carrinhoConteudo').classList.add('hidden');
+    } else {
+        document.getElementById('carrinhoVazio').classList.add('hidden');
+        document.getElementById('carrinhoConteudo').classList.remove('hidden');
+        
+        renderizarItens();
+    }
 }
-let html = '<ul class="divide-y divide-slate-100">';
-let subtotal = 0;
-carrinho.forEach((item, index) => {
-const preco = item.preco_diaria || 0;
-const itemTotal = preco * item.quantidade;
-subtotal += itemTotal;
-html += `
-<li class="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-<div class="flex-grow">
-<h3 class="font-semibold text-slate-800">${item.nome}</h3>
-<p class="text-sm text-slate-600">R$ ${preco.toFixed(2)}/dia</p>
-${item.dataInicio && item.dataFim ? `
-<p class="text-xs text-blue-600 mt-1 bg-blue-50 inline-block px-2 py-1 rounded">📅 ${item.dataInicio} até ${item.dataFim} | ⏰ ${item.horaEntrega || '08:00'}</p>
-` : ''}
-<div class="flex items-center mt-3">
-<button onclick="alterarQuantidade(${index}, -1)" class="bg-slate-100 w-8 h-8 rounded-lg hover:bg-slate-200 transition text-lg font-bold">-</button>
-<span class="mx-4 font-semibold">${item.quantidade}</span>
-<button onclick="alterarQuantidade(${index}, 1)" class="bg-slate-100 w-8 h-8 rounded-lg hover:bg-slate-200 transition text-lg font-bold">+</button>
-</div>
-</div>
-<div class="text-right flex flex-col items-end gap-2">
-<p class="font-bold text-lg text-slate-800">R$ ${itemTotal.toFixed(2)}</p>
-<button onclick="removerItem(${index})" class="text-red-600 text-sm hover:text-red-800 transition font-medium">Remover</button>
-</div>
-</li>
-`;
+
+function renderizarItens() {
+    const container = document.getElementById('itensCarrinho');
+    let total = 0;
+    
+    container.innerHTML = carrinhoAtual.map(item => {
+        const subtotal = item.quantidade * item.preco_diaria;
+        total += subtotal;
+        return `
+            <div class="flex justify-between items-center py-3 border-b">
+                <div>
+                    <h4 class="font-semibold">${item.nome}</h4>
+                    <p class="text-sm text-gray-600">R$ ${item.preco_diaria.toFixed(2)}/dia x ${item.quantidade}</p>
+                </div>
+                <div class="text-right">
+                    <p class="font-bold">R$ ${subtotal.toFixed(2)}</p>
+                    <button onclick="removerItem('${item.id}')" class="text-red-500 text-sm hover:underline">Remover</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    document.getElementById('totalCarrinho').innerText = `R$ ${total.toFixed(2)}`;
+}
+
+function removerItem(id) {
+    carrinhoAtual = carrinhoAtual.filter(item => item.id !== id);
+    localStorage.setItem('carrinho', JSON.stringify(carrinhoAtual));
+    carregarCarrinho();
+}
+
+document.getElementById('formFinalizar').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const dataInicio = document.getElementById('dataInicio').value;
+    const dataFim = document.getElementById('dataFim').value;
+    const horaEntrega = document.getElementById('horaEntrega').value;
+    const formaPagamento = document.getElementById('formaPagamento').value;
+    const endereco = document.getElementById('endereco').value;
+    
+    if (!dataInicio || !dataFim || !horaEntrega || !formaPagamento || !endereco) {
+        alert('Preencha todos os campos');
+        return;
+    }
+    
+    const inicio = new Date(dataInicio);
+    const fim = new Date(dataFim);
+    
+    if (inicio > fim) {
+        alert('Data de início não pode ser maior que data de fim');
+        return;
+    }
+    
+    const dias = Math.ceil((fim - inicio) / (1000 * 60 * 60 * 24)) + 1;
+    let total = 0;
+    
+    carrinhoAtual.forEach(item => {
+        total += item.preco_diaria * item.quantidade * dias;
+    });
+    
+    try {
+        const data = await fetchAPI('/cliente/finalizar', {
+            method: 'POST',
+            body: JSON.stringify({
+                itens: JSON.stringify(carrinhoAtual),
+                data_inicio: dataInicio,
+                data_fim: dataFim,
+                hora_entrega: horaEntrega,
+                forma_pagamento: formaPagamento,
+                endereco_entrega: endereco,
+                valor_total: total
+            })
+        });
+        
+        if (data.success) {
+            alert('Pedido realizado com sucesso!');
+            localStorage.removeItem('carrinho');
+            if (formaPagamento === 'pix') {
+                alert('Pagamento via PIX: Chave aleatória gerada. Enviaremos o QR Code por email.');
+            }
+            window.location.href = '/cliente/meus-alugueis';
+        } else {
+            alert(data.error || 'Erro ao finalizar pedido');
+        }
+    } catch (error) {
+        alert('Erro ao finalizar pedido');
+    }
 });
-html += '</ul>';
-container.innerHTML = html;
-document.getElementById('subtotal').innerText = `R$ ${subtotal.toFixed(2)}`;
-document.getElementById('total').innerText = `R$ ${subtotal.toFixed(2)}`;
-}
-function alterarQuantidade(index, delta) {
-if (carrinho[index].quantidade + delta <= 0) {
-removerItem(index);
-} else {
-carrinho[index].quantidade += delta;
-localStorage.setItem('carrinho', JSON.stringify(carrinho));
+
 carregarCarrinho();
-atualizarCarrinhoCount();
-}
-}
-function removerItem(index) {
-carrinho.splice(index, 1);
-localStorage.setItem('carrinho', JSON.stringify(carrinho));
-carregarCarrinho();
-atualizarCarrinhoCount();
-}
-function atualizarCarrinhoCount() {
-const carrinhoAtual = JSON.parse(localStorage.getItem('carrinho') || '[]');
-const totalItens = carrinhoAtual.reduce((sum, item) => sum + item.quantidade, 0);
-const badge = document.getElementById('carrinhoCount');
-if (badge) {
-badge.innerText = totalItens;
-badge.style.display = totalItens > 0 ? 'inline-block' : 'none';
-}
-}
-async function finalizarPedido(event) {
-const formaPagamento = document.getElementById('formaPagamento').value;
-const enderecoEntrega = document.getElementById('enderecoEntrega').value;
-if (carrinho.length === 0) {
-alert('⚠️ Carrinho vazio!');
-return;
-}
-if (!enderecoEntrega.trim()) {
-alert('⚠️ Por favor, informe o endereço de entrega!');
-document.getElementById('enderecoEntrega').focus();
-return;
-}
-const itensSemData = carrinho.filter(item => !item.dataInicio || !item.dataFim);
-if (itensSemData.length > 0) {
-alert('⚠️ Alguns itens não têm período definido. Remova e adicione novamente pelo catálogo.');
-return;
-}
-const itensFormatados = carrinho.map(item => ({
-id: item._id || item.id,
-nome: item.nome,
-quantidade: item.quantidade,
-preco_diaria: item.preco_diaria
-}));
-const dataInicio = carrinho[0].dataInicio;
-const dataFim = carrinho[0].dataFim;
-const horaEntrega = carrinho[0].horaEntrega || '08:00';
-const btn = event.target;
-const originalText = btn.innerText;
-btn.disabled = true;
-btn.innerText = '⏳ Processando...';
-try {
-const response = await fetch('/cliente/finalizar-pedido', {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({
-itens: itensFormatados,
-dataInicio: dataInicio,
-dataFim: dataFim,
-horaEntrega: horaEntrega,
-formaPagamento: formaPagamento,
-enderecoEntrega: enderecoEntrega
-})
-});
-const data = await response.json();
-if (data.success) {
-let msg = '✅ Pedido finalizado com sucesso!';
-if (formaPagamento === 'dinheiro') {
-msg = '✅ Pedido realizado! Lembre-se de levar o dinheiro no momento da retirada. O administrador irá confirmar o pagamento.';
-}
-alert(msg);
-localStorage.removeItem('carrinho');
-window.location.href = '/cliente/meus-alugueis';
-} else {
-alert('❌ Erro: ' + (data.message || 'Não foi possível finalizar o pedido'));
-btn.disabled = false;
-btn.innerText = originalText;
-}
-} catch (error) {
-console.error('Erro:', error);
-alert('❌ Erro de conexão. Tente novamente.');
-btn.disabled = false;
-btn.innerText = originalText;
-}
-}
-document.addEventListener('DOMContentLoaded', () => {
-carregarCarrinho();
-atualizarCarrinhoCount();
-});
 </script>
-<%- include('../partials/footer.ejs') %>
+
+<%- include('../partials/footer') %>

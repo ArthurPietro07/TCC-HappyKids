@@ -1,101 +1,365 @@
-<%- include('../partials/admin-header.ejs') %>
-<div class="max-w-7xl mx-auto px-4 py-8 fade-in">
-  <div class="flex justify-between items-center mb-8">
-    <h1 class="text-3xl font-bold text-slate-800">Gerenciar Brinquedos</h1>
-    <button onclick="abrirModal()" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 transition font-medium shadow-md flex items-center gap-2"><i class="ri-add-line"></i> Novo Brinquedo</button>
-  </div>
-  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="w-full text-left">
-        <thead class="bg-slate-50 text-slate-500 text-xs uppercase"><tr><th class="p-4">ID</th><th class="p-4">Imagem</th><th class="p-4">Nome</th><th class="p-4">Preço/Dia</th><th class="p-4">Preço/Sem</th><th class="p-4">Estoque</th><th class="p-4">Status</th><th class="p-4">Ações</th></tr></thead>
-        <tbody class="divide-y divide-slate-100">
-          <% if (brinquedos && brinquedos.length > 0) { %>
-            <% brinquedos.forEach(brinquedo => { %>
-              <tr class="hover:bg-slate-50 transition">
-                <td class="p-4 font-mono text-sm"><%= brinquedo._id.toString().slice(-6) %></td>
-                <td class="p-4"><img src="<%= brinquedo.imagem_url || '/uploads/placeholder.jpg' %>" class="w-14 h-14 object-cover rounded-lg border border-slate-200" onerror="this.src='/uploads/placeholder.jpg'"></td>
-                <td class="p-4 font-semibold text-slate-800"><%= brinquedo.nome %></td>
-                <td class="p-4">R$ <%= brinquedo.preco_diaria.toFixed(2) %></td>
-                <td class="p-4">R$ <%= brinquedo.preco_semanal.toFixed(2) %></td>
-                <td class="p-4"><span class="font-bold text-slate-700"><%= brinquedo.quantidade_estoque %></span></td>
-                <td class="p-4"><% if (brinquedo.disponivel) { %><span class="badge badge-success">Disponível</span><% } else { %><span class="badge badge-danger">Indisponível</span><% } %></td>
-                <td class="p-4 space-x-3"><button onclick="editarBrinquedo('<%= brinquedo._id %>')" class="text-blue-600 hover:text-blue-800 font-medium transition"><i class="ri-edit-line"></i> Editar</button><button onclick="excluirBrinquedo('<%= brinquedo._id %>')" class="text-red-600 hover:text-red-800 font-medium transition"><i class="ri-delete-bin-line"></i> Excluir</button></td>
-              </tr>
-            <% }) %>
-          <% } else { %>
-            <tr><td colspan="8" class="text-center p-8 text-slate-400">Nenhum brinquedo cadastrado.</td></tr>
-          <% } %>
-        </tbody>
-      </table>
-    </div>
-  </div>
+<%- include('../partials/admin-header') %>
+
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">Gerenciar Brinquedos</h1>
+    <button onclick="abrirModalNovo()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
+        + Novo Brinquedo
+    </button>
 </div>
 
-<div id="modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
-  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
-    <h2 id="modalTitle" class="text-xl font-bold mb-4">Novo Brinquedo</h2>
-    <form id="formBrinquedo" class="space-y-4">
-      <input type="hidden" id="brinquedoId">
-      <div><label class="block text-sm font-medium text-slate-700 mb-1">Nome *</label><input type="text" id="nome" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500"></div>
-      <div><label class="block text-sm font-medium text-slate-700 mb-1">Descrição *</label><textarea id="descricao" rows="3" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500"></textarea></div>
-      <div class="grid grid-cols-2 gap-4">
-        <div><label class="block text-sm font-medium text-slate-700 mb-1">Preço Diária *</label><input type="number" id="precoDiaria" step="0.01" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl"></div>
-        <div><label class="block text-sm font-medium text-slate-700 mb-1">Preço Semanal *</label><input type="number" id="precoSemanal" step="0.01" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl"></div>
-      </div>
-      <div><label class="block text-sm font-medium text-slate-700 mb-1">Estoque *</label><input type="number" id="estoque" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl"></div>
-      <div><label class="block text-sm font-medium text-slate-700 mb-1">URL da Imagem</label><input type="text" id="imagem" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl" placeholder="https://exemplo.com/imagem.jpg"><p class="text-xs text-slate-500 mt-1">Deixe em branco para usar padrão</p></div>
-      <div class="flex justify-end gap-3 pt-2"><button type="button" onclick="fecharModal()" class="px-4 py-2.5 bg-slate-100 rounded-xl hover:bg-slate-200 transition font-medium">Cancelar</button><button type="submit" class="px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-medium">Salvar</button></div>
-    </form>
-  </div>
+<div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="px-4 py-3 text-left">Imagem Principal</th>
+                    <th class="px-4 py-3 text-left">Nome</th>
+                    <th class="px-4 py-3 text-left">Estoque</th>
+                    <th class="px-4 py-3 text-left">Preço Diária</th>
+                    <th class="px-4 py-3 text-left">Status</th>
+                    <th class="px-4 py-3 text-left">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% brinquedos.forEach(brinquedo => { 
+                    const imagemPrincipal = brinquedo.imagens.find(img => img.principal) || brinquedo.imagens[0];
+                %>
+                    <tr class="border-t hover:bg-gray-50">
+                        <td class="px-4 py-3">
+                            <img src="<%= imagemPrincipal ? imagemPrincipal.url : '/uploads/default.jpg' %>" alt="<%= brinquedo.nome %>" class="w-12 h-12 object-cover rounded">
+                        </td>
+                        <td class="px-4 py-3"><%= brinquedo.nome %></td>
+                        <td class="px-4 py-3"><%= brinquedo.quantidade_estoque %></td>
+                        <td class="px-4 py-3">R$ <%= brinquedo.preco_diaria.toFixed(2) %></td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 rounded text-xs <%= brinquedo.disponivel ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
+                                <%= brinquedo.disponivel ? 'Disponível' : 'Indisponível' %>
+                            </span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <button onclick="editarBrinquedo('<%= brinquedo._id %>')" class="text-blue-600 hover:underline mr-2">Editar</button>
+                            <button onclick="excluirBrinquedo('<%= brinquedo._id %>')" class="text-red-600 hover:underline">Excluir</button>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
 </div>
+
+<!-- Modal Novo/Editar -->
+<div id="modalBrinquedo" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 700px; max-height: 85vh; overflow-y: auto;">
+        <div class="flex justify-between items-center mb-4 pb-3 border-b">
+            <h2 id="modalTitulo" class="text-xl font-bold text-gray-800">Novo Brinquedo</h2>
+            <button onclick="fecharModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+        </div>
+        
+        <form id="formBrinquedo" enctype="multipart/form-data">
+            <input type="hidden" id="brinquedoId">
+            <input type="hidden" id="imagensExistentes" value="">
+            <input type="hidden" id="imagensParaRemover" value="">
+            
+            <div class="mb-3">
+                <label class="block text-gray-700 mb-1 text-sm font-medium">Nome</label>
+                <input type="text" id="nome" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <div class="mb-3">
+                <label class="block text-gray-700 mb-1 text-sm font-medium">Descrição</label>
+                <textarea id="descricao" required rows="3" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+            </div>
+            
+            <div class="mb-3">
+                <label class="block text-gray-700 mb-1 text-sm font-medium">Quantidade em Estoque</label>
+                <input type="number" id="quantidade_estoque" required min="0" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <div class="mb-3">
+                <label class="block text-gray-700 mb-1 text-sm font-medium">Preço Diária (R$)</label>
+                <input type="number" id="preco_diaria" required step="0.01" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <div class="mb-3">
+                <label class="block text-gray-700 mb-1 text-sm font-medium">Preço Semanal (R$)</label>
+                <input type="number" id="preco_semanal" required step="0.01" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <!-- Galeria de Imagens Existentes -->
+            <div id="galeriaImagens" class="mb-3" style="display: none;">
+                <label class="block text-gray-700 mb-2 text-sm font-medium">Imagens do Brinquedo</label>
+                <div id="listaImagens" class="grid grid-cols-4 gap-3 mb-3"></div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="block text-gray-700 mb-1 text-sm font-medium">Adicionar Novas Imagens</label>
+                <input type="file" id="novasImagens" accept="image/jpeg,image/png,image/gif,image/webp" multiple class="w-full text-sm">
+                <p class="text-xs text-gray-500 mt-1">Você pode selecionar até 10 imagens (JPG, PNG, GIF, WEBP até 5MB cada)</p>
+            </div>
+            
+            <div class="mb-4">
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" id="disponivel" class="mr-2 w-4 h-4">
+                    <span class="text-sm">Disponível para aluguel</span>
+                </label>
+            </div>
+            
+            <div class="flex justify-end gap-2 pt-3 border-t">
+                <button type="button" onclick="fecharModal()" class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 transition">Cancelar</button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Salvar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+.modal-content {
+    background-color: white;
+    margin: 2% auto;
+    padding: 20px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 700px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+.imagem-item {
+    position: relative;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+}
+.imagem-item.principal {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59,130,246,0.3);
+}
+.imagem-item img {
+    width: 100%;
+    height: 80px;
+    object-fit: cover;
+}
+.imagem-item .badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+.imagem-item .btn-remover {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    background: rgba(239,68,68,0.9);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 10px;
+    cursor: pointer;
+}
+.imagem-item .btn-principal {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    background: rgba(59,130,246,0.9);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 10px;
+    cursor: pointer;
+}
+</style>
+
 <script>
-function abrirModal() { document.getElementById('modalTitle').innerText = 'Novo Brinquedo'; document.getElementById('formBrinquedo').reset(); document.getElementById('brinquedoId').value = ''; document.getElementById('modal').classList.remove('hidden'); document.getElementById('modal').classList.add('flex'); }
-function fecharModal() { document.getElementById('modal').classList.add('hidden'); document.getElementById('modal').classList.remove('flex'); }
-function setLoading(button, isLoading) { if (isLoading) { button.disabled = true; button.textContent = 'Salvando...'; } else { button.disabled = false; button.textContent = 'Salvar'; } }
-document.getElementById('formBrinquedo').addEventListener('submit', async (e) => {
-e.preventDefault();
-const submitBtn = e.target.querySelector('button[type="submit"]');
-setLoading(submitBtn, true);
-const id = document.getElementById('brinquedoId').value;
-const dados = { nome: document.getElementById('nome').value, descricao: document.getElementById('descricao').value, preco_diaria: parseFloat(document.getElementById('precoDiaria').value), preco_semanal: parseFloat(document.getElementById('precoSemanal').value), quantidade_estoque: parseInt(document.getElementById('estoque').value), imagem_url: document.getElementById('imagem').value || '/uploads/placeholder.jpg' };
-const url = id ? `/admin/brinquedos/${id}` : '/admin/brinquedos';
-const method = id ? 'PUT' : 'POST';
-try {
-const response = await fetch(url, { method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados) });
-const result = await response.json();
-if (response.ok && result.success) { alert(result.message || 'Brinquedo salvo com sucesso!'); location.reload(); } else { alert('Erro: ' + (result.error || result.message || 'Erro ao salvar brinquedo')); }
-} catch (error) { console.error('Erro:', error); alert('Erro de conexão. Tente novamente.'); } finally { setLoading(submitBtn, false); }
-});
+let imagensAtuais = [];
+let imagensRemover = [];
+
+const modal = document.getElementById('modalBrinquedo');
+
+function abrirModalNovo() {
+    document.getElementById('modalTitulo').innerText = 'Novo Brinquedo';
+    document.getElementById('formBrinquedo').reset();
+    document.getElementById('brinquedoId').value = '';
+    document.getElementById('disponivel').checked = true;
+    document.getElementById('galeriaImagens').style.display = 'none';
+    imagensAtuais = [];
+    imagensRemover = [];
+    modal.style.display = 'block';
+}
+
+function fecharModal() {
+    modal.style.display = 'none';
+}
+
 async function editarBrinquedo(id) {
-const btn = event.target.closest('button');
-const originalText = btn.innerHTML;
-btn.innerHTML = '<i class="ri-loader-4-line animate-spin"></i> Carregando...'; btn.disabled = true;
-try {
-const response = await fetch(`/admin/brinquedos/${id}`);
-if (!response.ok) throw new Error('Brinquedo não encontrado');
-const data = await response.json();
-document.getElementById('brinquedoId').value = data._id;
-document.getElementById('nome').value = data.nome;
-document.getElementById('descricao').value = data.descricao;
-document.getElementById('precoDiaria').value = data.preco_diaria;
-document.getElementById('precoSemanal').value = data.preco_semanal;
-document.getElementById('estoque').value = data.quantidade_estoque;
-document.getElementById('imagem').value = data.imagem_url || '';
-document.getElementById('modalTitle').innerText = 'Editar Brinquedo';
-document.getElementById('modal').classList.remove('hidden');
-document.getElementById('modal').classList.add('flex');
-} catch (error) { console.error('Erro:', error); alert('Erro ao carregar dados do brinquedo: ' + error.message); } finally { btn.innerHTML = originalText; btn.disabled = false; }
+    try {
+        showLoading();
+        const response = await fetch(`/admin/brinquedos/${id}`);
+        const brinquedo = await response.json();
+        
+        document.getElementById('modalTitulo').innerText = 'Editar Brinquedo';
+        document.getElementById('brinquedoId').value = brinquedo._id;
+        document.getElementById('nome').value = brinquedo.nome;
+        document.getElementById('descricao').value = brinquedo.descricao;
+        document.getElementById('quantidade_estoque').value = brinquedo.quantidade_estoque;
+        document.getElementById('preco_diaria').value = brinquedo.preco_diaria;
+        document.getElementById('preco_semanal').value = brinquedo.preco_semanal;
+        document.getElementById('disponivel').checked = brinquedo.disponivel;
+        
+        imagensAtuais = brinquedo.imagens || [];
+        imagensRemover = [];
+        renderizarGaleria();
+        
+        document.getElementById('galeriaImagens').style.display = 'block';
+        modal.style.display = 'block';
+        hideLoading();
+    } catch (error) {
+        hideLoading();
+        alert('Erro ao carregar dados do brinquedo');
+    }
 }
+
+function renderizarGaleria() {
+    const container = document.getElementById('listaImagens');
+    
+    if (imagensAtuais.length === 0) {
+        container.innerHTML = '<div class="col-span-4 text-center text-gray-500 py-4">Nenhuma imagem cadastrada</div>';
+        return;
+    }
+    
+    container.innerHTML = imagensAtuais.map(img => `
+        <div class="imagem-item ${img.principal ? 'principal' : ''}" data-filename="${img.filename}">
+            <img src="${img.url}" alt="Imagem">
+            <div class="badge">${img.principal ? 'Principal' : ''}</div>
+            <button type="button" class="btn-remover" onclick="removerImagem('${img.filename}')">Remover</button>
+            ${!img.principal ? `<button type="button" class="btn-principal" onclick="definirPrincipal('${img.filename}')">Principal</button>` : ''}
+        </div>
+    `).join('');
+    
+    document.getElementById('imagensExistentes').value = JSON.stringify(imagensAtuais.map(img => img.filename));
+}
+
+function removerImagem(filename) {
+    if (confirm('Remover esta imagem?')) {
+        imagensRemover.push(filename);
+        imagensAtuais = imagensAtuais.filter(img => img.filename !== filename);
+        
+        // Se removeu a imagem principal, definir a primeira como principal
+        if (imagensAtuais.length > 0 && !imagensAtuais.some(img => img.principal)) {
+            imagensAtuais[0].principal = true;
+        }
+        
+        renderizarGaleria();
+        document.getElementById('imagensParaRemover').value = JSON.stringify(imagensRemover);
+    }
+}
+
+async function definirPrincipal(filename) {
+    const id = document.getElementById('brinquedoId').value;
+    if (!id) return;
+    
+    try {
+        showLoading();
+        await fetch(`/admin/brinquedos/${id}/principal`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename })
+        });
+        
+        imagensAtuais.forEach(img => {
+            img.principal = img.filename === filename;
+        });
+        renderizarGaleria();
+        hideLoading();
+    } catch (error) {
+        hideLoading();
+        alert('Erro ao definir imagem principal');
+    }
+}
+
+document.getElementById('formBrinquedo').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const id = document.getElementById('brinquedoId').value;
+    const formData = new FormData();
+    formData.append('nome', document.getElementById('nome').value);
+    formData.append('descricao', document.getElementById('descricao').value);
+    formData.append('quantidade_estoque', document.getElementById('quantidade_estoque').value);
+    formData.append('preco_diaria', document.getElementById('preco_diaria').value);
+    formData.append('preco_semanal', document.getElementById('preco_semanal').value);
+    formData.append('disponivel', document.getElementById('disponivel').checked);
+    
+    if (id) {
+        formData.append('imagensExistentes', document.getElementById('imagensExistentes').value);
+        formData.append('imagensParaRemover', document.getElementById('imagensParaRemover').value);
+    }
+    
+    const novasImagens = document.getElementById('novasImagens').files;
+    for (let i = 0; i < novasImagens.length; i++) {
+        formData.append('novasImagens', novasImagens[i]);
+    }
+    
+    const url = id ? `/admin/brinquedos/${id}` : '/admin/brinquedos';
+    const method = id ? 'PUT' : 'POST';
+    
+    try {
+        showLoading();
+        const response = await fetch(url, { method, body: formData });
+        
+        if (response.ok) {
+            alert(id ? 'Brinquedo atualizado com sucesso!' : 'Brinquedo criado com sucesso!');
+            location.reload();
+        } else {
+            const error = await response.json();
+            alert(error.error || 'Erro ao salvar');
+        }
+        hideLoading();
+    } catch (error) {
+        hideLoading();
+        alert('Erro ao salvar');
+    }
+});
+
 async function excluirBrinquedo(id) {
-if (!confirm('⚠️ Tem certeza que deseja excluir este brinquedo?\nIsso removerá permanentemente do sistema.')) return;
-const row = event.target.closest('tr');
-row.style.opacity = '0.5';
-try {
-const response = await fetch(`/admin/brinquedos/${id}`, {method: 'DELETE'});
-const result = await response.json();
-if (response.ok && result.success) { alert('✅ Brinquedo excluído com sucesso!'); location.reload(); } else { alert('❌ Erro: ' + (result.error || 'Não foi possível excluir')); row.style.opacity = '1'; }
-} catch (error) { console.error('Erro:', error); alert('❌ Erro de conexão.'); row.style.opacity = '1'; }
+    if (confirm('Tem certeza que deseja excluir este brinquedo? Todas as imagens serão removidas.')) {
+        try {
+            showLoading();
+            const response = await fetch(`/admin/brinquedos/${id}`, { method: 'DELETE' });
+            if (response.ok) {
+                alert('Brinquedo excluído!');
+                location.reload();
+            } else {
+                alert('Erro ao excluir');
+            }
+            hideLoading();
+        } catch (error) {
+            hideLoading();
+            alert('Erro ao excluir');
+        }
+    }
 }
-document.getElementById('modal').addEventListener('click', (e) => { if (e.target === document.getElementById('modal')) fecharModal(); });
+
+window.onclick = function(event) {
+    if (event.target === modal) {
+        modal.style.display = 'none';
+    }
+}
 </script>
-<%- include('../partials/admin-footer.ejs') %>
+
+<%- include('../partials/admin-footer') %>

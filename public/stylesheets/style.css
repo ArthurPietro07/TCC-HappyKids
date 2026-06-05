@@ -1,53 +1,48 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-:root {
-  --primary: #2563eb;
-  --primary-dark: #1d4ed8;
-  --bg-main: #f8fafc;
-  --text-main: #0f172a;
-  --radius: 12px;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
-  --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
+/* Estilos adicionais para o sistema */
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background: var(--bg-main);
-  color: var(--text-main);
-  line-height: 1.6;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-input, select, textarea {
-  transition: var(--transition);
-}
-input:focus, select:focus, textarea:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+/* Animações */
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
-.hover-card { transition: var(--transition); }
-.hover-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
-
-.badge {
-  display: inline-flex; align-items: center;
-  padding: 0.25rem 0.75rem; border-radius: 9999px;
-  font-size: 0.75rem; font-weight: 500; letter-spacing: 0.025em;
+.animate-spin {
+    animation: spin 1s linear infinite;
 }
-.badge-success { background: #d1fae5; color: #065f46; }
-.badge-warning { background: #fef3c7; color: #92400e; }
-.badge-danger { background: #fee2e2; color: #991b1b; }
-.badge-info { background: #dbeafe; color: #1e40af; }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
 }
-.fade-in { animation: fadeIn 0.4s ease-out forwards; }
 
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: #f1f5f9; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    table {
+        display: block;
+        overflow-x: auto;
+    }
+    
+    .grid-cols-7 {
+        gap: 4px;
+    }
+    
+    .min-h-[100px] {
+        min-height: 80px;
+    }
+}

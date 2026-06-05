@@ -1,59 +1,212 @@
-<%- include('../partials/admin-header.ejs') %>
-<div class="max-w-7xl mx-auto px-4 py-8 fade-in">
-  <h1 class="text-3xl font-bold text-slate-800 mb-2">📅 Calendário de Ocupação</h1>
-  <p class="text-slate-500 mb-6">Visualize a disponibilidade dos brinquedos</p>
-  <div class="mb-6"><label class="block text-slate-700 mb-2 font-medium">🎮 Selecione o Brinquedo:</label><select id="selectBrinquedo" class="w-full md:w-64 p-3 bg-white border border-slate-200 rounded-xl shadow-sm"><option value="todos">📋 Todos os brinquedos</option><% if (brinquedos && brinquedos.length > 0) { %><% brinquedos.forEach(brinquedo => { %><option value="<%= brinquedo._id %>">🎮 <%= brinquedo.nome %></option><% }) %><% } %></select></div>
-  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 overflow-x-auto">
-    <div id="calendarioContainer"><div class="text-center py-8"><div class="inline-block animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent"></div><p class="mt-2 text-slate-500">Carregando calendário...</p></div></div>
-  </div>
-</div>
-<script>
-let ocupacoesData = [];
-let dataAtual = new Date();
-let anoAtual = dataAtual.getFullYear();
-let mesAtual = dataAtual.getMonth();
-document.getElementById('selectBrinquedo').addEventListener('change', carregarOcupacoes);
-async function carregarOcupacoes() {
-const brinquedoId = document.getElementById('selectBrinquedo').value;
-try {
-const response = await fetch(`/admin/calendario/ocupacoes?brinquedo_id=${brinquedoId}`);
-ocupacoesData = await response.json();
-renderizarCalendario();
-} catch (error) {
-console.error('Erro ao carregar ocupações:', error);
-document.getElementById('calendarioContainer').innerHTML = '<p class="text-red-500 text-center">❌ Erro ao carregar calendário</p>';
-}
-}
-function renderizarCalendario() {
-const primeiroDia = new Date(anoAtual, mesAtual, 1);
-const ultimoDia = new Date(anoAtual, mesAtual + 1, 0);
-const diaInicioSemana = primeiroDia.getDay();
-const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-let html = `
+<%- include('../partials/admin-header') %>
+
+<h1 class="text-3xl font-bold mb-6">Calendário de Ocupação</h1>
+
 <div class="flex justify-between items-center mb-6">
-<button onclick="mudarMes(-1)" class="bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl transition font-medium">◀ Mês Anterior</button>
-<h2 class="text-2xl font-bold text-slate-800">${nomesMeses[mesAtual]} ${anoAtual}</h2>
-<button onclick="mudarMes(1)" class="bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl transition font-medium">Próximo Mês ▶</button>
+    <a href="?mes=<%= mes-1 %>&ano=<%= mes === 1 ? ano-1 : ano %>" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+        &laquo; Mês Anterior
+    </a>
+    <h2 class="text-2xl font-bold text-gray-800">
+        <% 
+        const mesesPortugues = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+        const nomeMes = mesesPortugues[mes-1];
+        %>
+        <%= nomeMes %> <%= ano %>
+    </h2>
+    <a href="?mes=<%= mes+1 %>&ano=<%= mes === 12 ? ano+1 : ano %>" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+        Próximo Mês &raquo;
+    </a>
 </div>
-<div class="grid grid-cols-7 gap-2 mb-2 text-center font-bold text-slate-500"><div>DOM</div><div>SEG</div><div>TER</div><div>QUA</div><div>QUI</div><div>SEX</div><div>SÁB</div></div>
-<div class="grid grid-cols-7 gap-2">`;
-for (let i = 0; i < diaInicioSemana; i++) { html += `<div class="bg-slate-50 rounded-xl p-2 min-h-[100px]"></div>`; }
-const hoje = new Date(); hoje.setHours(0,0,0,0);
-for (let d = 1; d <= ultimoDia.getDate(); d++) {
-const dataObj = new Date(anoAtual, mesAtual, d);
-const dataStr = `${anoAtual}-${String(mesAtual + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-const isHoje = dataObj.toDateString() === hoje.toDateString();
-const ocupacao = ocupacoesData.find(o => o.data === dataStr);
-const quantidade = ocupacao ? ocupacao.quantidade : 0;
-let bgColor = 'bg-white'; let textColor = 'text-slate-800';
-if (isHoje) { bgColor = 'bg-blue-100'; textColor = 'text-blue-800'; } else if (quantidade === 0) { bgColor = 'bg-emerald-50'; } else { bgColor = 'bg-amber-50'; }
-html += `<div class="${bgColor} rounded-xl p-2 min-h-[100px] border ${isHoje ? 'border-blue-400 border-2' : 'border-slate-100'}"><div class="font-bold ${textColor}">${d}</div>`;
-if (quantidade === 0) { html += `<div class="text-emerald-600 text-xs mt-2 text-center font-medium">✅ Disponível</div>`; } else { html += `<div class="text-amber-600 text-xs mt-2 text-center font-medium">📦 ${quantidade} ${quantidade===1?'aluguel':'aluguéis'}</div>`; }
-html += `</div>`; }
-html += `</div>`;
-document.getElementById('calendarioContainer').innerHTML = html;
+
+<div class="grid grid-cols-7 gap-2 mb-4">
+    <div class="text-center font-bold p-3 bg-blue-100 rounded-lg text-blue-800">Domingo</div>
+    <div class="text-center font-bold p-3 bg-blue-100 rounded-lg text-blue-800">Segunda</div>
+    <div class="text-center font-bold p-3 bg-blue-100 rounded-lg text-blue-800">Terça</div>
+    <div class="text-center font-bold p-3 bg-blue-100 rounded-lg text-blue-800">Quarta</div>
+    <div class="text-center font-bold p-3 bg-blue-100 rounded-lg text-blue-800">Quinta</div>
+    <div class="text-center font-bold p-3 bg-blue-100 rounded-lg text-blue-800">Sexta</div>
+    <div class="text-center font-bold p-3 bg-blue-100 rounded-lg text-blue-800">Sábado</div>
+</div>
+
+<div class="grid grid-cols-7 gap-2">
+    <% 
+    const primeiroDia = new Date(ano, mes-1, 1);
+    const ultimoDia = new Date(ano, mes, 0);
+    const diasNoMes = ultimoDia.getDate();
+    const primeiroDiaSemana = primeiroDia.getDay();
+    
+    for(let i = 0; i < primeiroDiaSemana; i++) { %>
+        <div class="bg-gray-100 rounded-lg p-3 min-h-[120px]"></div>
+    <% } %>
+    
+    <% for(let dia = 1; dia <= diasNoMes; dia++) { 
+        const ocupacoes = ocupacao[dia] || [];
+        const hasOcupacao = ocupacoes.length > 0;
+    %>
+        <div class="bg-white border-2 rounded-lg p-3 min-h-[120px] hover:shadow-lg transition cursor-pointer <%= hasOcupacao ? 'hover:border-blue-400 border-blue-200' : 'border-gray-200' %>" 
+             onclick="mostrarDetalhes(<%= dia %>, <%= JSON.stringify(ocupacoes).replace(/</g, '\\u003c').replace(/>/g, '\\u003e') %>)">
+            <div class="font-bold text-lg mb-2 <%= hasOcupacao ? 'text-blue-600' : 'text-gray-600' %>">
+                <%= dia %>
+            </div>
+            <% if (hasOcupacao) { %>
+                <div class="text-xs space-y-1">
+                    <div class="bg-green-100 text-green-800 rounded px-2 py-1 font-semibold text-center">
+                        📊 <%= ocupacoes.length %> aluguel(is)
+                    </div>
+                    <div class="text-gray-500 text-center text-xs mt-1">
+                        Clique para ver detalhes
+                    </div>
+                </div>
+            <% } else { %>
+                <div class="text-gray-400 text-center mt-8 text-sm">
+                    Disponível
+                </div>
+            <% } %>
+        </div>
+    <% } %>
+</div>
+
+<!-- Modal Detalhes -->
+<div id="modalDetalhes" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+    <div style="background-color: white; margin: 5% auto; padding: 20px; border-radius: 12px; width: 90%; max-width: 800px; max-height: 80vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd;">
+            <h2 style="font-size: 24px; font-weight: bold; color: #333;">
+                Detalhes do Dia <span id="diaSelecionado" style="color: #2563eb;"></span>
+            </h2>
+            <button onclick="fecharModalDetalhes()" style="background: none; border: none; font-size: 30px; cursor: pointer; color: #666;">&times;</button>
+        </div>
+        <div id="detalhesConteudo" style="display: flex; flex-direction: column; gap: 16px;"></div>
+    </div>
+</div>
+
+<script>
+// Garantir que os dados do servidor estão disponíveis
+console.log('Script do calendário carregado');
+
+function mostrarDetalhes(dia, ocupacoes) {
+    console.log('=== CLIQUE NO DIA ===');
+    console.log('Dia clicado:', dia);
+    console.log('Dados recebidos:', ocupacoes);
+    
+    const modal = document.getElementById('modalDetalhes');
+    const diaSelecionado = document.getElementById('diaSelecionado');
+    const container = document.getElementById('detalhesConteudo');
+    
+    if (!modal) {
+        console.error('Modal não encontrado!');
+        alert('Erro: Modal não encontrado');
+        return;
+    }
+    
+    diaSelecionado.innerHTML = dia;
+    
+    // Verificar se tem dados
+    if (!ocupacoes || ocupacoes.length === 0) {
+        console.log('Nenhum aluguel neste dia');
+        container.innerHTML = '<div style="text-align: center; color: #666; padding: 40px;">Nenhum aluguel neste dia</div>';
+        modal.style.display = 'block';
+        return;
+    }
+    
+    console.log('Número de aluguéis:', ocupacoes.length);
+    
+    // Construir o HTML dos detalhes
+    let html = '';
+    
+    for (let i = 0; i < ocupacoes.length; i++) {
+        const ocup = ocupacoes[i];
+        console.log(`Aluguel ${i+1}:`, ocup);
+        console.log(`Itens do aluguel ${i+1}:`, ocup.itens);
+        
+        // Gerar lista de brinquedos
+        let itensHtml = '';
+        if (ocup.itens && ocup.itens.length > 0) {
+            for (let j = 0; j < ocup.itens.length; j++) {
+                const item = ocup.itens[j];
+                console.log(`Item ${j+1}:`, item);
+                itensHtml += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 20px;">🎈</span>
+                            <span style="font-weight: 500; color: #1f2937;">${item.nome || 'Brinquedo não identificado'}</span>
+                        </div>
+                        <span style="font-weight: bold; background: #dbeafe; padding: 4px 12px; border-radius: 20px; color: #1e40af;">
+                            ${item.quantidade || 0} unidade(s)
+                        </span>
+                    </div>
+                `;
+            }
+        } else {
+            itensHtml = '<div style="color: #ef4444; padding: 12px; text-align: center; background: #fee2e2; border-radius: 8px;">⚠️ Nenhum brinquedo encontrado neste aluguel</div>';
+        }
+        
+        html += `
+            <div style="border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; background-color: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                    <div style="flex: 1;">
+                        <h3 style="font-weight: bold; font-size: 18px; color: #1f2937; margin-bottom: 6px;">
+                            👤 ${ocup.cliente || 'Cliente não informado'}
+                        </h3>
+                        <p style="font-size: 13px; color: #6b7280; display: flex; align-items: center; gap: 4px;">
+                            📞 ${ocup.telefone || 'Telefone não informado'}
+                        </p>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="display: inline-block; padding: 4px 12px; font-size: 12px; font-weight: 600; border-radius: 20px; ${ocup.status === 'pago' ? 'background-color: #d1fae5; color: #065f46;' : 'background-color: #dbeafe; color: #1e40af;'}">
+                            ${ocup.status === 'pago' ? '✓ Pagamento Confirmado' : (ocup.status === 'ativo' ? '▶ Aluguel Ativo' : ocup.status)}
+                        </span>
+                        <p style="font-weight: bold; font-size: 20px; color: #059669; margin-top: 8px;">
+                            R$ ${typeof ocup.total === 'number' ? ocup.total.toFixed(2) : parseFloat(ocup.total || 0).toFixed(2)}
+                        </p>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 16px; padding: 10px; background-color: #f3f4f6; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 18px;">⏰</span>
+                    <span style="font-weight: 500;">Horário de entrega:</span>
+                    <span style="color: #374151;">${ocup.horario || 'Não informado'}</span>
+                </div>
+                
+                <div style="border-top: 2px solid #e5e7eb; padding-top: 16px; margin-top: 8px;">
+                    <p style="font-weight: 600; color: #374151; margin-bottom: 12px; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                        <span>🎪</span> Brinquedos Alugados
+                        <span style="font-size: 12px; background: #e5e7eb; padding: 2px 8px; border-radius: 20px;">${ocup.itens ? ocup.itens.length : 0} item(ns)</span>
+                    </p>
+                    <div style="padding-left: 8px;">
+                        ${itensHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
+    modal.style.display = 'block';
+    console.log('Modal aberto com sucesso');
 }
-function mudarMes(delta) { const novaData = new Date(anoAtual, mesAtual + delta, 1); anoAtual = novaData.getFullYear(); mesAtual = novaData.getMonth(); carregarOcupacoes(); }
-document.addEventListener('DOMContentLoaded', () => { carregarOcupacoes(); });
+
+function fecharModalDetalhes() {
+    const modal = document.getElementById('modalDetalhes');
+    if (modal) {
+        modal.style.display = 'none';
+        console.log('Modal fechado');
+    }
+}
+
+// Fechar modal clicando fora
+window.onclick = function(event) {
+    const modal = document.getElementById('modalDetalhes');
+    if (event.target === modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Verificar se há elementos com onclick
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM carregado, verificando elementos do calendário...');
+    const dias = document.querySelectorAll('[onclick^="mostrarDetalhes"]');
+    console.log('Dias com evento de clique:', dias.length);
+});
 </script>
-<%- include('../partials/admin-footer.ejs') %>
+
+<%- include('../partials/admin-footer') %>
