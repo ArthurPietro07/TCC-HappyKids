@@ -19,17 +19,17 @@ router.get('/dashboard', async (req, res) => {
         const totalAlugueis = await Aluguel.countDocuments();
         const alugueisAtivos = await Aluguel.countDocuments({ status: 'ativo' });
         const totalBrinquedos = await Brinquedo.countDocuments();
-
+        
         const inicioMes = moment().startOf('month').toDate();
         const fimMes = moment().endOf('month').toDate();
-
+        
         const alugueisPagos = await Aluguel.find({
             pagamento_confirmado: true,
             data_pagamento: { $gte: inicioMes, $lte: fimMes }
         });
-
+        
         const faturamentoMes = alugueisPagos.reduce((sum, aluguel) => sum + aluguel.valor_total, 0);
-
+        
         res.render('admin/dashboard', {
             totalAlugueis,
             alugueisAtivos,
@@ -65,10 +65,14 @@ router.get('/brinquedos/:id', async (req, res) => {
     }
 });
 
+// Criar novo brinquedo
 router.post('/brinquedos', upload.array('imagens', 10), async (req, res) => {
     try {
-        const { nome, descricao, quantidade_estoque, preco_diaria, preco_semanal } = req.body;
-
+        console.log('POST - Body:', req.body);
+        console.log('POST - Arquivos:', req.files ? req.files.length : 0);
+        
+        const { nome, descricao, quantidade_estoque, preco_diaria, destaque } = req.body;
+        
         const imagens = [];
         if (req.files && req.files.length > 0) {
             req.files.forEach((file, index) => {
@@ -85,7 +89,7 @@ router.post('/brinquedos', upload.array('imagens', 10), async (req, res) => {
                 principal: true
             });
         }
-
+        
         const brinquedo = new Brinquedo({
             nome,
             descricao,
@@ -93,48 +97,64 @@ router.post('/brinquedos', upload.array('imagens', 10), async (req, res) => {
             quantidade_estoque: parseInt(quantidade_estoque),
             preco_diaria: parseFloat(preco_diaria),
             disponivel: true,
+            destaque: destaque === 'true' || destaque === true,
             data_cadastro: new Date()
         });
-
+        
         await brinquedo.save();
         req.session.success = 'Brinquedo cadastrado com sucesso';
         res.redirect('/admin/brinquedos');
     } catch (error) {
-        console.error(error);
-        req.session.error = 'Erro ao cadastrar brinquedo';
+        console.error('Erro ao cadastrar:', error);
+        req.session.error = 'Erro ao cadastrar brinquedo: ' + error.message;
         res.redirect('/admin/brinquedos');
     }
 });
 
-router.put('/brinquedos/:id', upload.array('novasImagens', 10), async (req, res) => {
+// Atualizar brinquedo
+router.put('/brinquedos/:id', upload.array('imagens', 10), async (req, res) => {
     try {
-        const { nome, descricao, quantidade_estoque, preco_diaria, preco_semanal, disponivel, imagensExistentes, imagensParaRemover } = req.body;
-
+        console.log('PUT - Body:', req.body);
+        console.log('PUT - Arquivos:', req.files ? req.files.length : 0);
+        
+        const { nome, descricao, quantidade_estoque, preco_diaria, disponivel, destaque, imagensExistentes, imagensParaRemover } = req.body;
+        
         const brinquedo = await Brinquedo.findById(req.params.id);
         if (!brinquedo) {
             return res.status(404).json({ error: 'Brinquedo não encontrado' });
         }
-
+        
+        // Processar imagens existentes
         let imagensAtuais = [];
-        if (imagensExistentes) {
-            const imagensExistentesArray = JSON.parse(imagensExistentes);
-            imagensAtuais = brinquedo.imagens.filter(img =>
-                imagensExistentesArray.includes(img.filename)
-            );
+        if (imagensExistentes && imagensExistentes !== '') {
+            try {
+                const imagensExistentesArray = JSON.parse(imagensExistentes);
+                imagensAtuais = brinquedo.imagens.filter(img => 
+                    imagensExistentesArray.includes(img.filename)
+                );
+            } catch (e) {
+                imagensAtuais = brinquedo.imagens;
+            }
         } else {
             imagensAtuais = brinquedo.imagens;
         }
-
-        if (imagensParaRemover) {
-            const imagensParaRemoverArray = JSON.parse(imagensParaRemover);
-            for (const filename of imagensParaRemoverArray) {
-                const filePath = path.join(__dirname, '../public/uploads', filename);
-                if (fs.existsSync(filePath) && filename !== 'default.jpg') {
-                    fs.unlinkSync(filePath);
+        
+        // Remover imagens marcadas
+        if (imagensParaRemover && imagensParaRemover !== '') {
+            try {
+                const imagensParaRemoverArray = JSON.parse(imagensParaRemover);
+                for (const filename of imagensParaRemoverArray) {
+                    const filePath = path.join(__dirname, '../public/uploads', filename);
+                    if (fs.existsSync(filePath) && filename !== 'default.jpg') {
+                        fs.unlinkSync(filePath);
+                    }
                 }
+            } catch (e) {
+                console.error('Erro ao remover imagens:', e);
             }
         }
-
+        
+        // Adicionar novas imagens
         if (req.files && req.files.length > 0) {
             req.files.forEach((file, index) => {
                 imagensAtuais.push({
@@ -144,45 +164,48 @@ router.put('/brinquedos/:id', upload.array('novasImagens', 10), async (req, res)
                 });
             });
         }
-
+        
+        // Garantir imagem principal
         if (imagensAtuais.length > 0 && !imagensAtuais.some(img => img.principal)) {
             imagensAtuais[0].principal = true;
         }
-
+        
         await Brinquedo.findByIdAndUpdate(req.params.id, {
             nome,
             descricao,
             imagens: imagensAtuais,
             quantidade_estoque: parseInt(quantidade_estoque),
             preco_diaria: parseFloat(preco_diaria),
-            disponivel: disponivel === 'true' || disponivel === true
+            disponivel: disponivel === 'true' || disponivel === true,
+            destaque: destaque === 'true' || destaque === true
         });
-
+        
         res.json({ success: true });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Erro ao atualizar brinquedo' });
+        console.error('Erro ao atualizar:', error);
+        res.status(500).json({ error: 'Erro ao atualizar brinquedo: ' + error.message });
     }
 });
 
+// Definir imagem principal
 router.post('/brinquedos/:id/principal', async (req, res) => {
     try {
         const { filename } = req.body;
         const brinquedo = await Brinquedo.findById(req.params.id);
-
+        
         if (!brinquedo) {
             return res.status(404).json({ error: 'Brinquedo não encontrado' });
         }
-
+        
         brinquedo.imagens.forEach(img => {
             img.principal = false;
         });
-
+        
         const imagemPrincipal = brinquedo.imagens.find(img => img.filename === filename);
         if (imagemPrincipal) {
             imagemPrincipal.principal = true;
         }
-
+        
         await brinquedo.save();
         res.json({ success: true });
     } catch (error) {
@@ -191,14 +214,15 @@ router.post('/brinquedos/:id/principal', async (req, res) => {
     }
 });
 
+// Excluir brinquedo
 router.delete('/brinquedos/:id', async (req, res) => {
     try {
         const brinquedo = await Brinquedo.findById(req.params.id);
-
+        
         if (!brinquedo) {
             return res.status(404).json({ error: 'Brinquedo não encontrado' });
         }
-
+        
         if (brinquedo.imagens) {
             for (const imagem of brinquedo.imagens) {
                 if (imagem.filename && imagem.filename !== 'default.jpg') {
@@ -209,7 +233,7 @@ router.delete('/brinquedos/:id', async (req, res) => {
                 }
             }
         }
-
+        
         await Brinquedo.findByIdAndDelete(req.params.id);
         res.json({ success: true });
     } catch (error) {
@@ -224,11 +248,11 @@ router.get('/alugueis', async (req, res) => {
         const { status } = req.query;
         let query = {};
         if (status && status !== '') query.status = status;
-
+        
         const alugueis = await Aluguel.find(query)
             .populate('usuario_id')
             .sort({ data_pedido: -1 });
-
+        
         res.render('admin/alugueis', { alugueis, status: status || '', moment });
     } catch (error) {
         console.error(error);
@@ -242,12 +266,12 @@ router.post('/alugueis/:id/confirmar-pagamento', async (req, res) => {
         if (!aluguel) {
             return res.status(404).json({ error: 'Aluguel não encontrado' });
         }
-
+        
         aluguel.pagamento_confirmado = true;
         aluguel.status = 'pago';
         aluguel.data_pagamento = new Date();
         await aluguel.save();
-
+        
         res.json({ success: true });
     } catch (error) {
         console.error(error);
@@ -261,10 +285,10 @@ router.post('/alugueis/:id/cancelar', async (req, res) => {
         if (!aluguel) {
             return res.status(404).json({ error: 'Aluguel não encontrado' });
         }
-
+        
         aluguel.status = 'cancelado';
         await aluguel.save();
-
+        
         res.json({ success: true });
     } catch (error) {
         console.error(error);
@@ -276,14 +300,14 @@ router.put('/alugueis/:id/status', async (req, res) => {
     try {
         const { status } = req.body;
         const aluguel = await Aluguel.findById(req.params.id);
-
+        
         if (!aluguel) {
             return res.status(404).json({ error: 'Aluguel não encontrado' });
         }
-
+        
         aluguel.status = status;
         await aluguel.save();
-
+        
         res.json({ success: true });
     } catch (error) {
         console.error(error);
@@ -291,47 +315,41 @@ router.put('/alugueis/:id/status', async (req, res) => {
     }
 });
 
-// Calendário de ocupação - VERSÃO CORRIGIDA
+// Calendário
 router.get('/calendario', async (req, res) => {
     try {
         const mes = parseInt(req.query.mes) || moment().month() + 1;
         const ano = parseInt(req.query.ano) || moment().year();
-
-        console.log('=== CALENDÁRIO ===');
-        console.log('Mês:', mes, 'Ano:', ano);
-
+        
         const inicioMes = moment(`${ano}-${mes}-01`).startOf('day').toDate();
         const fimMes = moment(`${ano}-${mes}-${moment(`${ano}-${mes}-01`).daysInMonth()}`).endOf('day').toDate();
-
+        
         const alugueis = await Aluguel.find({
             status: { $in: ['pago', 'ativo'] },
             data_inicio: { $lte: fimMes },
             data_fim: { $gte: inicioMes }
         }).populate('usuario_id');
-
-        console.log('Aluguéis encontrados:', alugueis.length);
-
+        
         const ocupacao = {};
         const diasNoMes = moment(`${ano}-${mes}-01`).daysInMonth();
-
+        
         for (let i = 1; i <= diasNoMes; i++) {
             ocupacao[i] = [];
         }
-
+        
         for (const aluguel of alugueis) {
             const inicio = moment(aluguel.data_inicio);
             const fim = moment(aluguel.data_fim);
-
+            
             const itensProcessados = [];
             for (const item of aluguel.itens) {
                 let nomeBrinquedo = item.nome_brinquedo;
-
+                
                 if (!nomeBrinquedo || nomeBrinquedo === 'Brinquedo não identificado' || nomeBrinquedo === 'undefined') {
                     try {
                         const brinquedo = await Brinquedo.findById(item.brinquedo_id);
                         if (brinquedo && brinquedo.nome) {
                             nomeBrinquedo = brinquedo.nome;
-                            console.log(`Nome corrigido para: ${nomeBrinquedo}`);
                         } else {
                             nomeBrinquedo = `Brinquedo (ID: ${item.brinquedo_id})`;
                         }
@@ -339,16 +357,16 @@ router.get('/calendario', async (req, res) => {
                         nomeBrinquedo = `Brinquedo (ID: ${item.brinquedo_id})`;
                     }
                 }
-
+                
                 itensProcessados.push({
                     nome: nomeBrinquedo,
                     quantidade: item.quantidade
                 });
             }
-
+            
             for (let dia = 1; dia <= diasNoMes; dia++) {
                 const dataAtual = moment(`${ano}-${mes}-${dia}`);
-
+                
                 if (dataAtual.isBetween(inicio, fim, 'day', '[]')) {
                     ocupacao[dia].push({
                         cliente: aluguel.usuario_id ? aluguel.usuario_id.nome : 'Cliente não encontrado',
@@ -362,7 +380,7 @@ router.get('/calendario', async (req, res) => {
                 }
             }
         }
-
+        
         res.render('admin/calendario', {
             ocupacao: ocupacao,
             mes: mes,

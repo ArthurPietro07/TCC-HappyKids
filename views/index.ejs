@@ -40,7 +40,7 @@
         </div>
     </div>
 
-    <!-- Brinquedos em Destaque -->
+    <!-- Brinquedos em Destaque - APENAS 3 -->
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-xl sm:text-2xl font-bold text-gray-900">Brinquedos em Destaque</h2>
         <a href="/catalogo" class="text-indigo-600 hover:text-indigo-700 font-medium text-sm sm:text-base flex items-center gap-1">
@@ -49,8 +49,13 @@
         </a>
     </div>
     
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-        <% brinquedos.forEach(brinquedo => { %>
+    <!-- Grid com EXATAMENTE 3 brinquedos -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        <% 
+        // Pegar apenas os 3 primeiros brinquedos
+        const brinquedosDestaque = brinquedos.slice(0, 3);
+        brinquedosDestaque.forEach(brinquedo => { 
+        %>
             <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition group">
                 <a href="/brinquedo/<%= brinquedo._id %>" class="block overflow-hidden bg-gray-100">
                     <img src="<%= brinquedo.imagem_principal || brinquedo.imagem_url || '/uploads/default.jpg' %>" alt="<%= brinquedo.nome %>" 
@@ -76,7 +81,7 @@
         <% }) %>
     </div>
     
-    <!-- Caso não tenha brinquedos -->
+    <!-- Caso não tenha brinquedos suficientes -->
     <% if (brinquedos.length === 0) { %>
         <div class="text-center py-12 bg-gray-50 rounded-2xl">
             <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -86,6 +91,8 @@
             <a href="/catalogo" class="inline-block mt-4 text-indigo-600 hover:text-indigo-700 font-medium">Ver catálogo completo</a>
         </div>
     <% } %>
+    
+
 </div>
 
 <style>

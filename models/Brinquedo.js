@@ -28,6 +28,10 @@ const BrinquedoSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    destaque: {
+        type: Boolean,
+        default: false
+    },
     data_cadastro: {
         type: Date,
         default: Date.now

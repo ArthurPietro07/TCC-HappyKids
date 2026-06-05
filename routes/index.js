@@ -8,7 +8,8 @@ const moment = require('moment');
 // Página inicial
 router.get('/', async (req, res) => {
     try {
-        const brinquedos = await Brinquedo.find({ disponivel: true }).limit(6).sort({ data_cadastro: -1 });
+        // Buscar apenas brinquedos com destaque = true
+        const brinquedos = await Brinquedo.find({ disponivel: true, destaque: true }).limit(3).sort({ data_cadastro: -1 });
         
         // Processar brinquedos para garantir imagem principal
         const brinquedosProcessados = brinquedos.map(brinquedo => {
@@ -51,7 +52,6 @@ router.get('/catalogo', async (req, res) => {
                 ? comentarios.reduce((acc, c) => acc + c.estrelas, 0) / comentarios.length 
                 : 0;
             
-            // Pegar imagem principal
             const imagemPrincipal = brinquedo.imagens?.find(img => img.principal) || brinquedo.imagens?.[0];
             
             return {

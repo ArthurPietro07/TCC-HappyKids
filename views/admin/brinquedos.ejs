@@ -19,7 +19,8 @@
                     <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Imagem</th>
                     <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Nome</th>
                     <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Estoque</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Preço Diária</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Preço</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Destaque</th>
                     <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Status</th>
                     <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Ações</th>
                 </tr>
@@ -38,7 +39,18 @@
                                 <%= brinquedo.quantidade_estoque %>
                             </span>
                         </td>
-                        <td class="px-6 py-4 font-semibold text-gray-900">R$ <%= brinquedo.preco_diaria.toFixed(2) %></td>
+                        <td class="px-6 py-4 font-semibold text-gray-900">R$ <%= brinquedo.preco_diaria.toFixed(2) %>/dia</td>
+                        <td class="px-6 py-4">
+                            <% if (brinquedo.destaque) { %>
+                                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+                                    ⭐ Destaque
+                                </span>
+                            <% } else { %>
+                                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">
+                                    Normal
+                                </span>
+                            <% } %>
+                        </td>
                         <td class="px-6 py-4">
                             <span class="px-3 py-1 rounded-full text-xs font-semibold <%= brinquedo.disponivel ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
                                 <%= brinquedo.disponivel ? 'Disponível' : 'Indisponível' %>
@@ -87,7 +99,8 @@
             
             <div class="mb-5">
                 <label class="block text-gray-700 mb-2 text-sm font-semibold">Descrição</label>
-                <textarea id="descricao" required rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"></textarea>
+                <textarea id="descricao" required rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition" placeholder="Escreva a descrição do brinquedo..."></textarea>
+                <p class="text-xs text-gray-500 mt-1">Use Enter para quebrar linha - a formatação será preservada</p>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
@@ -109,14 +122,25 @@
             
             <div class="mb-5">
                 <label class="block text-gray-700 mb-2 text-sm font-semibold">Adicionar Novas Imagens</label>
-                <input type="file" id="novasImagens" accept="image/jpeg,image/png,image/gif,image/webp" multiple class="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                <input type="file" id="imagens" name="imagens" accept="image/jpeg,image/png,image/gif,image/webp" multiple class="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
                 <p class="text-xs text-gray-500 mt-2">Você pode selecionar até 10 imagens (JPG, PNG, GIF, WEBP até 5MB cada)</p>
             </div>
             
-            <div class="mb-6">
-                <label class="flex items-center cursor-pointer">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <label class="flex items-center cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
                     <input type="checkbox" id="disponivel" class="mr-3 w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                    <span class="text-sm font-medium text-gray-700">Disponível para aluguel</span>
+                    <div>
+                        <span class="text-sm font-medium text-gray-700">Disponível para aluguel</span>
+                        <p class="text-xs text-gray-500">Clientes podem ver e alugar</p>
+                    </div>
+                </label>
+                
+                <label class="flex items-center cursor-pointer p-3 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition">
+                    <input type="checkbox" id="destaque" class="mr-3 w-5 h-5 rounded border-gray-300 text-yellow-500 focus:ring-yellow-500">
+                    <div>
+                        <span class="text-sm font-medium text-gray-700">⭐ Destaque na página inicial</span>
+                        <p class="text-xs text-gray-500">Aparece nos 3 destaques da home</p>
+                    </div>
                 </label>
             </div>
             
@@ -230,7 +254,9 @@ function abrirModalNovo() {
     document.getElementById('formBrinquedo').reset();
     document.getElementById('brinquedoId').value = '';
     document.getElementById('disponivel').checked = true;
+    document.getElementById('destaque').checked = false;
     document.getElementById('galeriaImagens').style.display = 'none';
+    document.getElementById('imagens').value = '';
     imagensAtuais = [];
     imagensRemover = [];
     modal.style.display = 'block';
@@ -253,6 +279,7 @@ async function editarBrinquedo(id) {
         document.getElementById('quantidade_estoque').value = brinquedo.quantidade_estoque;
         document.getElementById('preco_diaria').value = brinquedo.preco_diaria;
         document.getElementById('disponivel').checked = brinquedo.disponivel;
+        document.getElementById('destaque').checked = brinquedo.destaque || false;
         
         imagensAtuais = brinquedo.imagens || [];
         imagensRemover = [];
@@ -334,15 +361,16 @@ document.getElementById('formBrinquedo').addEventListener('submit', async (e) =>
     formData.append('quantidade_estoque', document.getElementById('quantidade_estoque').value);
     formData.append('preco_diaria', document.getElementById('preco_diaria').value);
     formData.append('disponivel', document.getElementById('disponivel').checked);
+    formData.append('destaque', document.getElementById('destaque').checked);
     
     if (id) {
         formData.append('imagensExistentes', document.getElementById('imagensExistentes').value);
         formData.append('imagensParaRemover', document.getElementById('imagensParaRemover').value);
     }
     
-    const novasImagens = document.getElementById('novasImagens').files;
-    for (let i = 0; i < novasImagens.length; i++) {
-        formData.append('novasImagens', novasImagens[i]);
+    const imagensInput = document.getElementById('imagens');
+    for (let i = 0; i < imagensInput.files.length; i++) {
+        formData.append('imagens', imagensInput.files[i]);
     }
     
     const url = id ? `/admin/brinquedos/${id}` : '/admin/brinquedos';
