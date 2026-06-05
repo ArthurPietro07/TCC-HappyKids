@@ -1,6 +1,6 @@
     </main>
     <footer class="bg-gray-800 text-white mt-12 py-8">
-        <div class="container mx-auto px-4">
+        <div class="container mx-auto px-6">
             <div class="flex flex-col md:flex-row justify-between items-center gap-6">
                 <div class="flex items-center gap-3">
                     <img src="/uploads/logo-pequena.png" alt="HappyKids" class="w-auto h-10">
@@ -29,8 +29,14 @@
         </div>
     </div>
     <script>
-        function showLoading() { document.querySelector('.loading').style.display = 'flex'; }
-        function hideLoading() { document.querySelector('.loading').style.display = 'none'; }
+        function showLoading() { 
+            const loading = document.querySelector('.loading');
+            if (loading) loading.style.display = 'flex';
+        }
+        function hideLoading() { 
+            const loading = document.querySelector('.loading');
+            if (loading) loading.style.display = 'none';
+        }
         
         async function fetchAPI(url, options = {}) {
             showLoading();
@@ -47,12 +53,25 @@
 
         function updateCartCount() {
             const cart = JSON.parse(localStorage.getItem('carrinho') || '[]');
-            const count = cart.reduce((sum, item) => sum + item.quantidade, 0);
+            const count = cart.reduce((sum, item) => sum + (item.quantidade || 0), 0);
             const badge = document.getElementById('carrinhoCount');
-            if(badge) badge.innerText = count;
+            if (badge) badge.innerText = count;
         }
+        
         updateCartCount();
         window.addEventListener('storage', updateCartCount);
+        
+        // Auto-fechar mensagens após 5 segundos
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.bg-green-50, .bg-red-50');
+            alerts.forEach(alert => {
+                alert.style.transition = 'opacity 0.3s';
+                alert.style.opacity = '0';
+                setTimeout(() => {
+                    if (alert.parentElement) alert.remove();
+                }, 300);
+            });
+        }, 5000);
     </script>
 </body>
 </html>

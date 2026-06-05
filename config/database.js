@@ -7,24 +7,6 @@ const connectDB = async () => {
         await mongoose.connect(mongoURI);
         console.log('MongoDB conectado com sucesso');
         
-        // Criar usuário admin padrão se não existir
-        const Usuario = require('../models/Usuario');
-        const adminExists = await Usuario.findOne({ email: 'admin@happykids.com' });
-        
-        if (!adminExists) {
-            const bcrypt = require('bcryptjs');
-            const admin = new Usuario({
-                nome: 'Administrador',
-                email: 'admin@happykids.com',
-                senha: bcrypt.hashSync('123456', 10),
-                telefone: '(00) 00000-0000',
-                tipo: 'admin',
-                data_cadastro: new Date()
-            });
-            await admin.save();
-            console.log('Usuário admin criado: admin@happykids.com / 123456');
-        }
-        
     } catch (error) {
         console.error('Erro ao conectar ao MongoDB:', error);
         process.exit(1);

@@ -20,16 +20,21 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Configuração da sessão
 app.use(session({
-    secret: 'happykids_secret_key_2024',
+    secret: process.env.SESSION_SECRET || 'happykids_secret_key_2024',
     resave: false,
     saveUninitialized: true,
     cookie: { maxAge: 3600000 } // 1 hora
 }));
 
-// Variáveis globais para templates
+// Middleware para mensagens flash - disponível em todas as views
 app.use((req, res, next) => {
     res.locals.user = req.session.user || null;
     res.locals.moment = moment;
+    res.locals.success = req.session.success || null;
+    res.locals.error = req.session.error || null;
+    // Limpar mensagens após usar
+    delete req.session.success;
+    delete req.session.error;
     next();
 });
 

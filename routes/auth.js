@@ -5,17 +5,28 @@ const Usuario = require('../models/Usuario');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 
-// Configuração do nodemailer (exemplo com ethereal.email para teste)
+// Configuração REAL do Gmail
 const transporter = nodemailer.createTransport({
-    host: 'smtp.ethereal.email',
+    host: 'smtp.gmail.com',
     port: 587,
+    secure: false,
     auth: {
-        user: 'teste@ethereal.email', // Substituir por credenciais reais
-        pass: 'teste123'
+        user: 'lembrarvinicius@gmail.com',
+        pass: 'muoz vgex rgzn etep'
     }
 });
 
-// Login
+// Verificar se a conexão está funcionando
+transporter.verify((error, success) => {
+    if (error) {
+        console.error('❌ Erro na conexão com email:', error);
+    } else {
+        console.log('✅ Email configurado com sucesso!');
+        console.log(`📧 Enviando emails como: lembrarvinicius@gmail.com`);
+    }
+});
+
+// ==================== LOGIN ====================
 router.get('/login', (req, res) => {
     res.render('login', { error: req.session.error, success: req.session.success });
 });
@@ -37,16 +48,18 @@ router.post('/login', async (req, res) => {
             tipo: usuario.tipo
         };
         
+        req.session.success = 'Login realizado com sucesso!';
         const redirectTo = req.session.redirectTo || (usuario.tipo === 'admin' ? '/admin/dashboard' : '/');
         delete req.session.redirectTo;
         res.redirect(redirectTo);
     } catch (error) {
+        console.error(error);
         req.session.error = 'Erro ao fazer login';
         res.redirect('/auth/login');
     }
 });
 
-// Cadastro
+// ==================== CADASTRO ====================
 router.get('/cadastro', (req, res) => {
     res.render('cadastro', { error: req.session.error });
 });
@@ -57,6 +70,11 @@ router.post('/cadastro', async (req, res) => {
         
         if (senha !== confirmar_senha) {
             req.session.error = 'As senhas não coincidem';
+            return res.redirect('/auth/cadastro');
+        }
+        
+        if (senha.length < 6) {
+            req.session.error = 'A senha deve ter pelo menos 6 caracteres';
             return res.redirect('/auth/cadastro');
         }
         
@@ -80,18 +98,19 @@ router.post('/cadastro', async (req, res) => {
         req.session.success = 'Cadastro realizado com sucesso! Faça login';
         res.redirect('/auth/login');
     } catch (error) {
+        console.error(error);
         req.session.error = 'Erro ao cadastrar';
         res.redirect('/auth/cadastro');
     }
 });
 
-// Logout
+// ==================== LOGOUT ====================
 router.get('/logout', (req, res) => {
     req.session.destroy();
     res.redirect('/');
 });
 
-// Esqueceu senha
+// ==================== ESQUECEU SENHA (RECUPERAÇÃO) ====================
 router.get('/esqueceu-senha', (req, res) => {
     res.render('esqueceu-senha', { error: req.session.error, success: req.session.success });
 });
@@ -99,30 +118,95 @@ router.get('/esqueceu-senha', (req, res) => {
 router.post('/esqueceu-senha', async (req, res) => {
     try {
         const { email } = req.body;
+        
+        console.log(`📧 Tentando recuperar senha para: ${email}`);
+        
         const usuario = await Usuario.findOne({ email: email.toLowerCase() });
         
         if (!usuario) {
-            req.session.error = 'Email não encontrado';
+            req.session.error = 'Email não encontrado no sistema';
             return res.redirect('/auth/esqueceu-senha');
         }
         
+        // Gerar token único
         const token = crypto.randomBytes(32).toString('hex');
         usuario.resetToken = token;
         usuario.resetTokenExpiry = Date.now() + 3600000; // 1 hora
         await usuario.save();
         
-        // Enviar email com link de redefinição
+        // URL de redefinição (mude para sua URL real quando for produção)
         const resetUrl = `http://localhost:3000/auth/redefinir-senha/${token}`;
         
-        req.session.success = 'Email de recuperação enviado!';
+        // Configurar o email
+        const mailOptions = {
+            from: `"HappyKids" <lembrarvinicius@gmail.com>`,
+            to: usuario.email,
+            subject: 'Redefinição de Senha - HappyKids',
+            html: `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
+                        .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden; }
+                        .header { background: #2563eb; color: white; padding: 30px; text-align: center; }
+                        .content { padding: 30px; }
+                        .button { display: inline-block; background-color: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+                        .footer { background: #f4f4f4; padding: 20px; text-align: center; font-size: 12px; color: #666; }
+                        .warning { color: #ef4444; font-size: 12px; margin-top: 20px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h1>🎈 HappyKids</h1>
+                            <p>Recuperação de Senha</p>
+                        </div>
+                        <div class="content">
+                            <h2>Olá, ${usuario.nome}!</h2>
+                            <p>Recebemos uma solicitação para redefinir sua senha.</p>
+                            <p>Clique no botão abaixo para criar uma nova senha:</p>
+                            <div style="text-align: center;">
+                                <a href="${resetUrl}" class="button">Redefinir Senha</a>
+                            </div>
+                            <p>Se o botão não funcionar, copie e cole o link abaixo no seu navegador:</p>
+                            <p style="background: #f4f4f4; padding: 10px; border-radius: 4px; word-break: break-all;">
+                                ${resetUrl}
+                            </p>
+                            <div class="warning">
+                                ⚠️ Este link é válido por apenas 1 hora.
+                            </div>
+                            <p style="margin-top: 20px;">Se você não solicitou esta alteração, ignore este email.</p>
+                        </div>
+                        <div class="footer">
+                            <p>HappyKids - Locação de Brinquedos</p>
+                            <p>Este é um email automático, por favor não responda.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `,
+            text: `Olá ${usuario.nome}! Para redefinir sua senha, acesse: ${resetUrl}`
+        };
+        
+        // Enviar o email
+        await transporter.sendMail(mailOptions);
+        
+        console.log(`✅ Email de recuperação enviado para: ${usuario.email}`);
+        console.log(`🔗 Link: ${resetUrl}`);
+        
+        req.session.success = 'Email de recuperação enviado! Verifique sua caixa de entrada.';
         res.redirect('/auth/esqueceu-senha');
+        
     } catch (error) {
-        req.session.error = 'Erro ao processar solicitação';
+        console.error('❌ Erro ao enviar email:', error);
+        req.session.error = 'Erro ao enviar email de recuperação. Tente novamente.';
         res.redirect('/auth/esqueceu-senha');
     }
 });
 
-// Redefinir senha
+// ==================== REDEFINIR SENHA ====================
 router.get('/redefinir-senha/:token', async (req, res) => {
     try {
         const usuario = await Usuario.findOne({
@@ -131,12 +215,17 @@ router.get('/redefinir-senha/:token', async (req, res) => {
         });
         
         if (!usuario) {
-            req.session.error = 'Token inválido ou expirado';
+            req.session.error = 'Link inválido ou expirado. Solicite uma nova recuperação.';
             return res.redirect('/auth/esqueceu-senha');
         }
         
-        res.render('redefinir-senha', { token: req.params.token });
+        res.render('redefinir-senha', { 
+            token: req.params.token, 
+            error: null,
+            success: null
+        });
     } catch (error) {
+        console.error(error);
         res.redirect('/auth/esqueceu-senha');
     }
 });
@@ -144,6 +233,16 @@ router.get('/redefinir-senha/:token', async (req, res) => {
 router.post('/redefinir-senha/:token', async (req, res) => {
     try {
         const { senha, confirmar_senha } = req.body;
+        
+        if (!senha || !confirmar_senha) {
+            req.session.error = 'Por favor, preencha todos os campos';
+            return res.redirect(`/auth/redefinir-senha/${req.params.token}`);
+        }
+        
+        if (senha.length < 6) {
+            req.session.error = 'A senha deve ter pelo menos 6 caracteres';
+            return res.redirect(`/auth/redefinir-senha/${req.params.token}`);
+        }
         
         if (senha !== confirmar_senha) {
             req.session.error = 'As senhas não coincidem';
@@ -156,19 +255,24 @@ router.post('/redefinir-senha/:token', async (req, res) => {
         });
         
         if (!usuario) {
-            req.session.error = 'Token inválido ou expirado';
+            req.session.error = 'Link inválido ou expirado. Solicite uma nova recuperação.';
             return res.redirect('/auth/esqueceu-senha');
         }
         
+        // Atualizar senha
         usuario.senha = bcrypt.hashSync(senha, 10);
         usuario.resetToken = undefined;
         usuario.resetTokenExpiry = undefined;
         await usuario.save();
         
-        req.session.success = 'Senha redefinida com sucesso! Faça login';
+        console.log(`✅ Senha redefinida com sucesso para: ${usuario.email}`);
+        
+        req.session.success = 'Senha redefinida com sucesso! Faça login com sua nova senha.';
         res.redirect('/auth/login');
+        
     } catch (error) {
-        req.session.error = 'Erro ao redefinir senha';
+        console.error(error);
+        req.session.error = 'Erro ao redefinir senha. Tente novamente.';
         res.redirect(`/auth/redefinir-senha/${req.params.token}`);
     }
 });
