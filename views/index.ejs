@@ -1,38 +1,49 @@
 <%- include('partials/header') %>
 
-<div class="text-center mb-12">
-    <h1 class="text-4xl font-bold text-blue-600 mb-4">Bem-vindo ao HappyKids</h1>
-    <p class="text-xl text-gray-600">Sua melhor opção para locação de brinquedos</p>
+<div class="text-center mb-16 animate-fade-in">
+    <h1 class="text-5xl font-bold text-gray-900 mb-4">Bem-vindo ao HappyKids</h1>
+    <p class="text-xl text-gray-600 max-w-2xl mx-auto">Sua melhor opção para locação de brinquedos com qualidade e segurança</p>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-    <div class="bg-white rounded-lg shadow-md p-6 text-center">
-        <div class="text-4xl mb-4">🎈</div>
-        <h3 class="text-xl font-bold mb-2">Variedade</h3>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+    <div class="bg-white rounded-2xl shadow-md p-8 text-center card-hover">
+        <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+        </div>
+        <h3 class="text-xl font-bold mb-3 text-gray-900">Variedade</h3>
         <p class="text-gray-600">Mais de 50 tipos de brinquedos para todas as idades</p>
     </div>
-    <div class="bg-white rounded-lg shadow-md p-6 text-center">
-        <div class="text-4xl mb-4">💰</div>
-        <h3 class="text-xl font-bold mb-2">Preços Justos</h3>
+    <div class="bg-white rounded-2xl shadow-md p-8 text-center card-hover">
+        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        <h3 class="text-xl font-bold mb-3 text-gray-900">Preços Justos</h3>
         <p class="text-gray-600">Preços competitivos com desconto semanal</p>
     </div>
-    <div class="bg-white rounded-lg shadow-md p-6 text-center">
-        <div class="text-4xl mb-4">🚚</div>
-        <h3 class="text-xl font-bold mb-2">Entrega Rápida</h3>
+    <div class="bg-white rounded-2xl shadow-md p-8 text-center card-hover">
+        <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"></path></svg>
+        </div>
+        <h3 class="text-xl font-bold mb-3 text-gray-900">Entrega Rápida</h3>
         <p class="text-gray-600">Entregamos no horário que você escolher</p>
     </div>
 </div>
 
-<h2 class="text-2xl font-bold mb-6">Brinquedos em Destaque</h2>
-<div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+<h2 class="text-3xl font-bold mb-8 text-gray-900">Brinquedos em Destaque</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
     <% brinquedos.forEach(brinquedo => { %>
-        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
-            <img src="<%= brinquedo.imagem_principal %>" alt="<%= brinquedo.nome %>" class="w-full h-48 object-cover">
-            <div class="p-4">
-                <h3 class="font-bold text-lg mb-2"><%= brinquedo.nome %></h3>
-                <p class="text-gray-600 text-sm mb-2"><%= brinquedo.descricao.substring(0, 80) %>...</p>
-                <p class="text-blue-600 font-bold">R$ <%= brinquedo.preco_diaria %>/dia</p>
-                <a href="/brinquedo/<%= brinquedo._id %>" class="mt-3 inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+        <div class="bg-white rounded-2xl shadow-md overflow-hidden card-hover">
+            <img src="<%= brinquedo.imagem_principal %>" alt="<%= brinquedo.nome %>" class="w-full h-56 object-cover">
+            <div class="p-6">
+                <h3 class="font-bold text-lg mb-2 text-gray-900"><%= brinquedo.nome %></h3>
+                <p class="text-gray-600 text-sm mb-4 line-clamp-2"><%= brinquedo.descricao.substring(0, 80) %>...</p>
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <p class="text-indigo-600 font-bold text-xl">R$ <%= brinquedo.preco_diaria %></p>
+                        <p class="text-gray-500 text-xs">por dia</p>
+                    </div>
+                </div>
+                <a href="/brinquedo/<%= brinquedo._id %>" class="block w-full bg-indigo-600 text-white text-center px-4 py-3 rounded-lg hover:bg-indigo-700 transition font-medium">
                     Ver Detalhes
                 </a>
             </div>

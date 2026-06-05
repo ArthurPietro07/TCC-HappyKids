@@ -6,14 +6,23 @@ const ItemAluguelSchema = new mongoose.Schema({
         ref: 'Brinquedo',
         required: true
     },
-    nome_brinquedo: String,
+    nome_brinquedo: {
+        type: String,
+        required: true
+    },
     quantidade: {
         type: Number,
         required: true,
         min: 1
     },
-    preco_diaria: Number,
-    subtotal: Number
+    preco_diaria: {
+        type: Number,
+        required: true
+    },
+    subtotal: {
+        type: Number,
+        required: true
+    }
 });
 
 const AluguelSchema = new mongoose.Schema({

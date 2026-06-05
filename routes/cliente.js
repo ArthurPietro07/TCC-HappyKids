@@ -6,7 +6,6 @@ const Brinquedo = require('../models/Brinquedo');
 const Comentario = require('../models/Comentario');
 const Usuario = require('../models/Usuario');
 
-// Funções auxiliares para formatação de datas
 function formatarData(data) {
     if (!data) return '';
     const d = new Date(data);
@@ -71,10 +70,13 @@ router.get('/carrinho', (req, res) => {
     res.render('cliente/carrinho');
 });
 
-// Finalizar aluguel
+// Finalizar aluguel - VERSÃO CORRIGIDA
 router.post('/finalizar', async (req, res) => {
     try {
         const { itens, data_inicio, data_fim, hora_entrega, forma_pagamento, endereco_entrega, valor_total } = req.body;
+        
+        console.log('=== FINALIZAR ALUGUEL ===');
+        console.log('Itens recebidos:', itens);
         
         const itensParse = JSON.parse(itens);
         const inicio = new Date(data_inicio);
@@ -91,6 +93,8 @@ router.post('/finalizar', async (req, res) => {
             if (!brinquedo) {
                 return res.status(400).json({ error: `Brinquedo ${item.nome} não encontrado` });
             }
+            
+            console.log(`Brinquedo encontrado: ${brinquedo.nome}, ID: ${brinquedo._id}`);
             
             const alugueisConflitantes = await Aluguel.find({
                 'itens.brinquedo_id': item.id,
@@ -125,6 +129,8 @@ router.post('/finalizar', async (req, res) => {
             });
         }
         
+        console.log('Itens para salvar:', JSON.stringify(itensParaSalvar, null, 2));
+        
         const novoAluguel = new Aluguel({
             usuario_id: req.session.user.id,
             data_inicio: inicio,
@@ -137,11 +143,12 @@ router.post('/finalizar', async (req, res) => {
         });
         
         await novoAluguel.save();
+        console.log('Aluguel salvo com sucesso!');
         
         res.json({ success: true, aluguelId: novoAluguel._id });
     } catch (error) {
         console.error('Erro ao finalizar aluguel:', error);
-        res.status(500).json({ error: 'Erro ao finalizar aluguel' });
+        res.status(500).json({ error: 'Erro ao finalizar aluguel: ' + error.message });
     }
 });
 

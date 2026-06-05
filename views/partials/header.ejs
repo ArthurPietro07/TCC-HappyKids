@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HappyKids - Locação de Brinquedos</title>
+    <link rel="icon" type="image/png" href="public/uploads/logo-pequena.png">
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
     <style>
         .rating-input { display: inline-flex; flex-direction: row-reverse; gap: 5px; }
@@ -12,41 +14,72 @@
         .rating-input label { cursor: pointer; font-size: 24px; color: #ddd; }
         .rating-input input:checked ~ label { color: #ffc107; }
         .rating-input label:hover, .rating-input label:hover ~ label { color: #ffc107; }
-        .loading { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; }
+        .loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; }
     </style>
 </head>
-<body class="bg-gray-100">
-    <nav class="bg-blue-600 text-white shadow-lg">
-        <div class="container mx-auto px-4">
+<body class="bg-gray-50">
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+        <div class="container mx-auto px-6">
             <div class="flex justify-between items-center py-4">
-                <a href="/" class="text-2xl font-bold">HappyKids</a>
-                <div class="space-x-4">
-                    <a href="/catalogo" class="hover:text-blue-200 transition">Catálogo</a>
+                <a href="/" class="flex items-center gap-3">
+                    <img src="/uploads/logo-grande.png" alt="HappyKids" class="h-20 w-auto">
+                </a>
+                <div class="hidden md:flex items-center gap-6">
+                    <a href="/catalogo" class="text-gray-700 hover:text-indigo-600 font-medium transition">Catálogo</a>
                     <% if (user) { %>
                         <% if (user.tipo === 'admin') { %>
-                            <a href="/admin/dashboard" class="hover:text-blue-200 transition">Admin</a>
+                            <a href="/admin/dashboard" class="text-gray-700 hover:text-indigo-600 font-medium transition">Admin</a>
                         <% } else { %>
-                            <a href="/cliente/meus-alugueis" class="hover:text-blue-200 transition">Meus Aluguéis</a>
-                            <a href="/cliente/carrinho" class="hover:text-blue-200 transition">Carrinho</a>
-                            <a href="/cliente/perfil" class="hover:text-blue-200 transition">Perfil</a>
+                            <a href="/cliente/meus-alugueis" class="text-gray-700 hover:text-indigo-600 font-medium transition">Meus Aluguéis</a>
+                            <a href="/cliente/carrinho" class="relative text-gray-700 hover:text-indigo-600 font-medium transition flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                Carrinho
+                                <span id="carrinhoCount" class="absolute -top-2 -right-2 bg-indigo-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                            </a>
+                            <a href="/cliente/perfil" class="text-gray-700 hover:text-indigo-600 font-medium transition">Perfil</a>
                         <% } %>
-                        <a href="/auth/logout" class="bg-red-500 px-4 py-2 rounded hover:bg-red-600 transition">Sair</a>
+                        <a href="/auth/logout" class="bg-red-50 text-red-600 px-5 py-2 rounded-lg hover:bg-red-100 font-medium transition">Sair</a>
                     <% } else { %>
-                        <a href="/auth/login" class="bg-green-500 px-4 py-2 rounded hover:bg-green-600 transition">Entrar</a>
-                        <a href="/auth/cadastro" class="bg-blue-500 px-4 py-2 rounded hover:bg-blue-600 transition">Cadastrar</a>
+                        <a href="/auth/login" class="text-gray-700 hover:text-indigo-600 font-medium transition">Entrar</a>
+                        <a href="/auth/cadastro" class="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 font-medium transition">Cadastrar</a>
                     <% } %>
                 </div>
+                <button class="md:hidden text-gray-700" onclick="document.getElementById('mobileMenu').classList.toggle('hidden')">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+            </div>
+            <div id="mobileMenu" class="hidden md:hidden pb-4 border-t pt-4">
+                <a href="/catalogo" class="block py-2 text-gray-700 hover:text-indigo-600">Catálogo</a>
+                <% if (user) { %>
+                    <% if (user.tipo === 'admin') { %>
+                        <a href="/admin/dashboard" class="block py-2 text-gray-700 hover:text-indigo-600">Admin</a>
+                    <% } else { %>
+                        <a href="/cliente/meus-alugueis" class="block py-2 text-gray-700 hover:text-indigo-600">Meus Aluguéis</a>
+                        <a href="/cliente/carrinho" class="block py-2 text-gray-700 hover:text-indigo-600">Carrinho</a>
+                        <a href="/cliente/perfil" class="block py-2 text-gray-700 hover:text-indigo-600">Perfil</a>
+                    <% } %>
+                    <a href="/auth/logout" class="block py-2 text-red-600 font-medium">Sair</a>
+                <% } else { %>
+                    <a href="/auth/login" class="block py-2 text-gray-700 hover:text-indigo-600">Entrar</a>
+                    <a href="/auth/cadastro" class="block py-2 text-indigo-600 font-medium">Cadastrar</a>
+                <% } %>
             </div>
         </div>
     </nav>
-    <main class="container mx-auto px-4 py-8">
+    <main class="container mx-auto px-6 py-8">
         <% if (locals.success) { %>
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-                <%= success %>
+            <div class="bg-green-50 border-l-4 border-green-500 text-green-800 px-6 py-4 rounded-lg mb-6 shadow-sm animate-slide-down">
+                <div class="flex items-center gap-3">
+                    <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span class="font-medium"><%= success %></span>
+                </div>
             </div>
         <% } %>
         <% if (locals.error) { %>
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                <%= error %>
+            <div class="bg-red-50 border-l-4 border-red-500 text-red-800 px-6 py-4 rounded-lg mb-6 shadow-sm animate-slide-down">
+                <div class="flex items-center gap-3">
+                    <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span class="font-medium"><%= error %></span>
+                </div>
             </div>
         <% } %>

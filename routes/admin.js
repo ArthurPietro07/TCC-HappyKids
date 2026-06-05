@@ -42,9 +42,7 @@ router.get('/dashboard', async (req, res) => {
     }
 });
 
-// ==================== GERENCIAR BRINQUEDOS ====================
-
-// Listar brinquedos
+// Gerenciar Brinquedos
 router.get('/brinquedos', async (req, res) => {
     try {
         const brinquedos = await Brinquedo.find().sort({ data_cadastro: -1 });
@@ -57,7 +55,6 @@ router.get('/brinquedos', async (req, res) => {
     }
 });
 
-// Buscar um brinquedo específico (para edição)
 router.get('/brinquedos/:id', async (req, res) => {
     try {
         const brinquedo = await Brinquedo.findById(req.params.id);
@@ -68,7 +65,6 @@ router.get('/brinquedos/:id', async (req, res) => {
     }
 });
 
-// Criar novo brinquedo com múltiplas imagens
 router.post('/brinquedos', upload.array('imagens', 10), async (req, res) => {
     try {
         const { nome, descricao, quantidade_estoque, preco_diaria, preco_semanal } = req.body;
@@ -83,7 +79,6 @@ router.post('/brinquedos', upload.array('imagens', 10), async (req, res) => {
                 });
             });
         } else {
-            // Imagem padrão
             imagens.push({
                 url: '/uploads/default.jpg',
                 filename: 'default.jpg',
@@ -112,7 +107,6 @@ router.post('/brinquedos', upload.array('imagens', 10), async (req, res) => {
     }
 });
 
-// Atualizar brinquedo
 router.put('/brinquedos/:id', upload.array('novasImagens', 10), async (req, res) => {
     try {
         const { nome, descricao, quantidade_estoque, preco_diaria, preco_semanal, disponivel, imagensExistentes, imagensParaRemover } = req.body;
@@ -122,7 +116,6 @@ router.put('/brinquedos/:id', upload.array('novasImagens', 10), async (req, res)
             return res.status(404).json({ error: 'Brinquedo não encontrado' });
         }
         
-        // Processar imagens existentes
         let imagensAtuais = [];
         if (imagensExistentes) {
             const imagensExistentesArray = JSON.parse(imagensExistentes);
@@ -133,7 +126,6 @@ router.put('/brinquedos/:id', upload.array('novasImagens', 10), async (req, res)
             imagensAtuais = brinquedo.imagens;
         }
         
-        // Remover imagens marcadas para exclusão
         if (imagensParaRemover) {
             const imagensParaRemoverArray = JSON.parse(imagensParaRemover);
             for (const filename of imagensParaRemoverArray) {
@@ -144,7 +136,6 @@ router.put('/brinquedos/:id', upload.array('novasImagens', 10), async (req, res)
             }
         }
         
-        // Adicionar novas imagens
         if (req.files && req.files.length > 0) {
             req.files.forEach((file, index) => {
                 imagensAtuais.push({
@@ -155,7 +146,6 @@ router.put('/brinquedos/:id', upload.array('novasImagens', 10), async (req, res)
             });
         }
         
-        // Garantir que pelo menos uma imagem seja principal
         if (imagensAtuais.length > 0 && !imagensAtuais.some(img => img.principal)) {
             imagensAtuais[0].principal = true;
         }
@@ -177,7 +167,6 @@ router.put('/brinquedos/:id', upload.array('novasImagens', 10), async (req, res)
     }
 });
 
-// Definir imagem principal
 router.post('/brinquedos/:id/principal', async (req, res) => {
     try {
         const { filename } = req.body;
@@ -187,12 +176,10 @@ router.post('/brinquedos/:id/principal', async (req, res) => {
             return res.status(404).json({ error: 'Brinquedo não encontrado' });
         }
         
-        // Resetar todas as imagens para não principal
         brinquedo.imagens.forEach(img => {
             img.principal = false;
         });
         
-        // Definir a nova imagem principal
         const imagemPrincipal = brinquedo.imagens.find(img => img.filename === filename);
         if (imagemPrincipal) {
             imagemPrincipal.principal = true;
@@ -206,7 +193,6 @@ router.post('/brinquedos/:id/principal', async (req, res) => {
     }
 });
 
-// Excluir brinquedo
 router.delete('/brinquedos/:id', async (req, res) => {
     try {
         const brinquedo = await Brinquedo.findById(req.params.id);
@@ -215,7 +201,6 @@ router.delete('/brinquedos/:id', async (req, res) => {
             return res.status(404).json({ error: 'Brinquedo não encontrado' });
         }
         
-        // Remover arquivos de imagem
         if (brinquedo.imagens) {
             for (const imagem of brinquedo.imagens) {
                 if (imagem.filename && imagem.filename !== 'default.jpg') {
@@ -235,9 +220,7 @@ router.delete('/brinquedos/:id', async (req, res) => {
     }
 });
 
-// ==================== GERENCIAR ALUGUÉIS ====================
-
-// Listar aluguéis
+// Gerenciar Aluguéis
 router.get('/alugueis', async (req, res) => {
     try {
         const { status } = req.query;
@@ -255,7 +238,6 @@ router.get('/alugueis', async (req, res) => {
     }
 });
 
-// Confirmar pagamento
 router.post('/alugueis/:id/confirmar-pagamento', async (req, res) => {
     try {
         const aluguel = await Aluguel.findById(req.params.id);
@@ -275,7 +257,6 @@ router.post('/alugueis/:id/confirmar-pagamento', async (req, res) => {
     }
 });
 
-// Cancelar aluguel
 router.post('/alugueis/:id/cancelar', async (req, res) => {
     try {
         const aluguel = await Aluguel.findById(req.params.id);
@@ -293,7 +274,6 @@ router.post('/alugueis/:id/cancelar', async (req, res) => {
     }
 });
 
-// Atualizar status do aluguel
 router.put('/alugueis/:id/status', async (req, res) => {
     try {
         const { status } = req.body;
@@ -313,12 +293,14 @@ router.put('/alugueis/:id/status', async (req, res) => {
     }
 });
 
-// ==================== CALENDÁRIO ====================
-
+// Calendário de ocupação - VERSÃO CORRIGIDA
 router.get('/calendario', async (req, res) => {
     try {
         const mes = parseInt(req.query.mes) || moment().month() + 1;
         const ano = parseInt(req.query.ano) || moment().year();
+        
+        console.log('=== CALENDÁRIO ===');
+        console.log('Mês:', mes, 'Ano:', ano);
         
         const inicioMes = moment(`${ano}-${mes}-01`).startOf('day').toDate();
         const fimMes = moment(`${ano}-${mes}-${moment(`${ano}-${mes}-01`).daysInMonth()}`).endOf('day').toDate();
@@ -327,7 +309,9 @@ router.get('/calendario', async (req, res) => {
             status: { $in: ['pago', 'ativo'] },
             data_inicio: { $lte: fimMes },
             data_fim: { $gte: inicioMes }
-        }).populate('usuario_id').populate('itens.brinquedo_id');
+        }).populate('usuario_id');
+        
+        console.log('Aluguéis encontrados:', alugueis.length);
         
         const ocupacao = {};
         const diasNoMes = moment(`${ano}-${mes}-01`).daysInMonth();
@@ -340,6 +324,30 @@ router.get('/calendario', async (req, res) => {
             const inicio = moment(aluguel.data_inicio);
             const fim = moment(aluguel.data_fim);
             
+            const itensProcessados = [];
+            for (const item of aluguel.itens) {
+                let nomeBrinquedo = item.nome_brinquedo;
+                
+                if (!nomeBrinquedo || nomeBrinquedo === 'Brinquedo não identificado' || nomeBrinquedo === 'undefined') {
+                    try {
+                        const brinquedo = await Brinquedo.findById(item.brinquedo_id);
+                        if (brinquedo && brinquedo.nome) {
+                            nomeBrinquedo = brinquedo.nome;
+                            console.log(`Nome corrigido para: ${nomeBrinquedo}`);
+                        } else {
+                            nomeBrinquedo = `Brinquedo (ID: ${item.brinquedo_id})`;
+                        }
+                    } catch (err) {
+                        nomeBrinquedo = `Brinquedo (ID: ${item.brinquedo_id})`;
+                    }
+                }
+                
+                itensProcessados.push({
+                    nome: nomeBrinquedo,
+                    quantidade: item.quantidade
+                });
+            }
+            
             for (let dia = 1; dia <= diasNoMes; dia++) {
                 const dataAtual = moment(`${ano}-${mes}-${dia}`);
                 
@@ -349,11 +357,9 @@ router.get('/calendario', async (req, res) => {
                         telefone: aluguel.usuario_id ? aluguel.usuario_id.telefone : 'Não informado',
                         total: aluguel.valor_total,
                         horario: aluguel.hora_entrega,
+                        endereco: aluguel.endereco_entrega || 'Endereço não informado',
                         status: aluguel.status,
-                        itens: aluguel.itens.map(item => ({
-                            nome: item.nome_brinquedo,
-                            quantidade: item.quantidade
-                        }))
+                        itens: itensProcessados
                     });
                 }
             }

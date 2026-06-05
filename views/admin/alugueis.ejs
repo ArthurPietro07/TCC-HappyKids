@@ -1,10 +1,13 @@
 <!-- views/admin/alugueis.ejs -->
 <%- include('../partials/admin-header') %>
 
-<div class="flex justify-between items-center mb-6">
-    <h1 class="text-3xl font-bold">Gerenciar Aluguéis</h1>
-    <div class="flex gap-2">
-        <select id="filtroStatus" onchange="filtrarStatus()" class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 animate-fade-in">
+    <div>
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">Gerenciar Aluguéis</h1>
+        <p class="text-gray-600">Acompanhe e gerencie todos os aluguéis</p>
+    </div>
+    <div class="flex gap-3">
+        <select id="filtroStatus" onchange="filtrarStatus()" class="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition font-medium">
             <option value="">Todos os Status</option>
             <option value="aguardando_pagamento" <%= status === 'aguardando_pagamento' ? 'selected' : '' %>>Aguardando Pagamento</option>
             <option value="pago" <%= status === 'pago' ? 'selected' : '' %>>Pago</option>
@@ -15,14 +18,21 @@
     </div>
 </div>
 
-<div class="grid gap-4">
+<div class="grid gap-6">
     <% alugueis.forEach(aluguel => { 
         const statusColors = {
-            'aguardando_pagamento': 'bg-yellow-100 text-yellow-800 border-yellow-300',
-            'pago': 'bg-blue-100 text-blue-800 border-blue-300',
-            'ativo': 'bg-green-100 text-green-800 border-green-300',
-            'concluido': 'bg-purple-100 text-purple-800 border-purple-300',
-            'cancelado': 'bg-red-100 text-red-800 border-red-300'
+            'aguardando_pagamento': 'border-l-yellow-500 bg-yellow-50',
+            'pago': 'border-l-blue-500 bg-blue-50',
+            'ativo': 'border-l-green-500 bg-green-50',
+            'concluido': 'border-l-purple-500 bg-purple-50',
+            'cancelado': 'border-l-red-500 bg-red-50'
+        };
+        const statusBadge = {
+            'aguardando_pagamento': 'bg-yellow-100 text-yellow-800',
+            'pago': 'bg-blue-100 text-blue-800',
+            'ativo': 'bg-green-100 text-green-800',
+            'concluido': 'bg-purple-100 text-purple-800',
+            'cancelado': 'bg-red-100 text-red-800'
         };
         const statusText = {
             'aguardando_pagamento': 'Aguardando Pagamento',
@@ -32,83 +42,89 @@
             'cancelado': 'Cancelado'
         };
     %>
-        <div class="bg-white rounded-lg shadow-md overflow-hidden border-l-4 <%= statusColors[aluguel.status] %>">
-            <div class="p-6">
+        <div class="bg-white rounded-2xl shadow-md overflow-hidden border-l-4 <%= statusColors[aluguel.status] %> card-hover">
+            <div class="p-8">
                 <!-- Cabeçalho do Aluguel -->
-                <div class="flex justify-between items-start mb-4">
+                <div class="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
                     <div class="flex-1">
-                        <div class="flex items-center gap-3 mb-2">
-                            <h3 class="font-bold text-lg text-gray-800">
+                        <div class="flex items-center gap-3 mb-3">
+                            <h3 class="font-bold text-xl text-gray-900">
                                 Pedido #<%= aluguel._id.toString().slice(-6) %>
                             </h3>
-                            <span class="px-3 py-1 text-xs font-semibold rounded-full <%= statusColors[aluguel.status] %>">
+                            <span class="px-4 py-1 text-xs font-semibold rounded-full <%= statusBadge[aluguel.status] %>">
                                 <%= statusText[aluguel.status] %>
                             </span>
                         </div>
-                        <p class="text-gray-600">
-                            <span class="font-medium">Cliente:</span> <%= aluguel.usuario_id.nome %>
-                        </p>
-                        <p class="text-gray-600 text-sm">
-                            <span class="font-medium">Email:</span> <%= aluguel.usuario_id.email %> | 
-                            <span class="font-medium">Telefone:</span> <%= aluguel.usuario_id.telefone %>
-                        </p>
+                        <div class="space-y-1">
+                            <p class="text-gray-700">
+                                <span class="font-semibold">Cliente:</span> <%= aluguel.usuario_id.nome %>
+                            </p>
+                            <p class="text-gray-600 text-sm">
+                                <span class="font-medium">Email:</span> <%= aluguel.usuario_id.email %> | 
+                                <span class="font-medium">Telefone:</span> <%= aluguel.usuario_id.telefone %>
+                            </p>
+                        </div>
                     </div>
                     <div class="text-right">
-                        <p class="text-2xl font-bold text-blue-600">R$ <%= aluguel.valor_total.toFixed(2) %></p>
-                        <p class="text-sm text-gray-500">
-                            Pagamento: <%= aluguel.forma_pagamento === 'pix' ? 'PIX' : 'Dinheiro' %>
-                            <%= aluguel.pagamento_confirmado ? '(Confirmado)' : '(Pendente)' %>
+                        <p class="text-3xl font-bold text-indigo-600">R$ <%= aluguel.valor_total.toFixed(2) %></p>
+                        <p class="text-sm text-gray-600 mt-1">
+                            <span class="font-medium">Pagamento:</span> <%= aluguel.forma_pagamento === 'pix' ? 'PIX' : 'Dinheiro' %>
+                            <% if (aluguel.pagamento_confirmado) { %>
+                                <span class="text-green-600 font-semibold">(Confirmado)</span>
+                            <% } else { %>
+                                <span class="text-yellow-600 font-semibold">(Pendente)</span>
+                            <% } %>
                         </p>
                     </div>
                 </div>
                 
                 <!-- Detalhes do Aluguel -->
-                <div class="grid md:grid-cols-2 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
-                    <div>
-                        <p class="text-sm text-gray-600">
-                            <span class="font-medium">Data do Pedido:</span><br>
-                            <%= moment(aluguel.data_pedido).format('DD/MM/YYYY HH:mm') %>
-                        </p>
-                        <p class="text-sm text-gray-600 mt-2">
-                            <span class="font-medium">Período:</span><br>
-                            <%= moment(aluguel.data_inicio).format('DD/MM/YYYY') %> até <%= moment(aluguel.data_fim).format('DD/MM/YYYY') %>
-                        </p>
-                        <p class="text-sm text-gray-600 mt-2">
-                            <span class="font-medium">Dias Totais:</span><br>
-                            <%= moment(aluguel.data_fim).diff(moment(aluguel.data_inicio), 'days') + 1 %> dias
-                        </p>
+                <div class="grid md:grid-cols-2 gap-6 mb-6 p-6 bg-gray-50 rounded-xl">
+                    <div class="space-y-3">
+                        <div>
+                            <p class="text-sm text-gray-600 font-medium mb-1">Data do Pedido</p>
+                            <p class="text-gray-900 font-semibold"><%= moment(aluguel.data_pedido).format('DD/MM/YYYY HH:mm') %></p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600 font-medium mb-1">Período</p>
+                            <p class="text-gray-900 font-semibold"><%= moment(aluguel.data_inicio).format('DD/MM/YYYY') %> até <%= moment(aluguel.data_fim).format('DD/MM/YYYY') %></p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600 font-medium mb-1">Dias Totais</p>
+                            <p class="text-gray-900 font-semibold"><%= moment(aluguel.data_fim).diff(moment(aluguel.data_inicio), 'days') + 1 %> dias</p>
+                        </div>
                     </div>
-                    <div>
-                        <p class="text-sm text-gray-600">
-                            <span class="font-medium">Horário de Entrega:</span><br>
-                            <%= aluguel.hora_entrega %>
-                        </p>
-                        <p class="text-sm text-gray-600 mt-2">
-                            <span class="font-medium">Endereço:</span><br>
-                            <%= aluguel.endereco_entrega %>
-                        </p>
+                    <div class="space-y-3">
+                        <div>
+                            <p class="text-sm text-gray-600 font-medium mb-1">Horário de Entrega</p>
+                            <p class="text-gray-900 font-semibold"><%= aluguel.hora_entrega %></p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600 font-medium mb-1">Endereço</p>
+                            <p class="text-gray-900 font-semibold"><%= aluguel.endereco_entrega %></p>
+                        </div>
                         <% if (aluguel.data_pagamento) { %>
-                            <p class="text-sm text-gray-600 mt-2">
-                                <span class="font-medium">Data Pagamento:</span><br>
-                                <%= moment(aluguel.data_pagamento).format('DD/MM/YYYY HH:mm') %>
-                            </p>
+                            <div>
+                                <p class="text-sm text-gray-600 font-medium mb-1">Data Pagamento</p>
+                                <p class="text-gray-900 font-semibold"><%= moment(aluguel.data_pagamento).format('DD/MM/YYYY HH:mm') %></p>
+                            </div>
                         <% } %>
                     </div>
                 </div>
                 
                 <!-- Itens Alugados -->
-                <div class="mb-4">
-                    <h4 class="font-semibold text-gray-700 mb-2">Itens Alugados</h4>
+                <div class="mb-6">
+                    <h4 class="font-semibold text-gray-900 mb-3 text-lg">Itens Alugados</h4>
                     <div class="space-y-2">
                         <% aluguel.itens.forEach(item => { %>
-                            <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                            <div class="flex justify-between items-center p-4 bg-white rounded-lg border border-gray-200">
                                 <div>
-                                    <span class="font-medium"><%= item.nome_brinquedo %></span>
-                                    <span class="text-sm text-gray-600 ml-2">x<%= item.quantidade %></span>
+                                    <span class="font-semibold text-gray-900"><%= item.nome_brinquedo %></span>
+                                    <span class="text-gray-600 ml-2">x<%= item.quantidade %></span>
                                 </div>
                                 <div class="text-right">
                                     <span class="text-sm text-gray-600">R$ <%= item.preco_diaria %>/dia</span>
-                                    <span class="font-medium ml-3">R$ <%= (item.subtotal || item.preco_diaria * item.quantidade).toFixed(2) %></span>
+                                    <span class="font-bold text-gray-900 ml-3">R$ <%= (item.subtotal || item.preco_diaria * item.quantidade).toFixed(2) %></span>
                                 </div>
                             </div>
                         <% }) %>
@@ -116,33 +132,35 @@
                 </div>
                 
                 <!-- Ações -->
-                <div class="flex gap-2 pt-4 border-t">
+                <div class="flex flex-wrap gap-3 pt-6 border-t border-gray-200">
                     <% if (aluguel.status === 'aguardando_pagamento') { %>
-                        <button onclick="confirmarPagamento('<%= aluguel._id %>')" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2">
-                            <span>✓</span> Confirmar Pagamento
+                        <button onclick="confirmarPagamento('<%= aluguel._id %>')" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition font-semibold shadow-md hover:shadow-lg flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            Confirmar Pagamento
                         </button>
-                        <button onclick="cancelarAluguel('<%= aluguel._id %>')" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition flex items-center gap-2">
-                            <span>✗</span> Cancelar
+                        <button onclick="cancelarAluguel('<%= aluguel._id %>')" class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition font-semibold shadow-md hover:shadow-lg flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            Cancelar
                         </button>
                     <% } %>
                     <% if (aluguel.status === 'pago') { %>
-                        <button onclick="marcarAtivo('<%= aluguel._id %>')" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                        <button onclick="marcarAtivo('<%= aluguel._id %>')" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold shadow-md hover:shadow-lg">
                             Iniciar Aluguel
                         </button>
-                        <button onclick="cancelarAluguel('<%= aluguel._id %>')" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">
+                        <button onclick="cancelarAluguel('<%= aluguel._id %>')" class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition font-semibold shadow-md hover:shadow-lg">
                             Cancelar
                         </button>
                     <% } %>
                     <% if (aluguel.status === 'ativo') { %>
-                        <button onclick="marcarConcluido('<%= aluguel._id %>')" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition">
+                        <button onclick="marcarConcluido('<%= aluguel._id %>')" class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition font-semibold shadow-md hover:shadow-lg">
                             Concluir Aluguel
                         </button>
                     <% } %>
                     <% if (aluguel.status === 'concluido') { %>
-                        <span class="text-green-600 bg-green-50 px-4 py-2 rounded-lg">Aluguel Concluído</span>
+                        <span class="text-green-700 bg-green-100 px-6 py-3 rounded-lg font-semibold">Aluguel Concluído</span>
                     <% } %>
                     <% if (aluguel.status === 'cancelado') { %>
-                        <span class="text-red-600 bg-red-50 px-4 py-2 rounded-lg">Aluguel Cancelado</span>
+                        <span class="text-red-700 bg-red-100 px-6 py-3 rounded-lg font-semibold">Aluguel Cancelado</span>
                     <% } %>
                 </div>
             </div>
@@ -151,8 +169,9 @@
 </div>
 
 <% if (alugueis.length === 0) { %>
-    <div class="bg-white rounded-lg shadow-md p-12 text-center">
-        <p class="text-gray-500 text-lg">Nenhum aluguel encontrado</p>
+    <div class="bg-white rounded-2xl shadow-md p-16 text-center">
+        <svg class="w-20 h-20 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+        <p class="text-gray-500 text-xl font-medium">Nenhum aluguel encontrado</p>
     </div>
 <% } %>
 
@@ -221,7 +240,6 @@ async function marcarAtivo(id) {
             });
             const data = await response.json();
             if (data.success) {
-                // Atualizar status para ativo
                 const updateResponse = await fetch(`/admin/alugueis/${id}/status`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
