@@ -113,18 +113,18 @@ router.post('/esqueceu-senha', async (req, res) => {
         // Gerar token único
         const token = crypto.randomBytes(32).toString('hex');
         usuario.resetToken = token;
-        usuario.resetTokenExpiry = Date.now() + 3600000; // 1 hora
+        usuario.resetTokenExpiry = Date.now() + 3600000;
         await usuario.save();
         
-        // URL de redefinição (Railway)
+        // URL de redefinição
         const resetUrl = `https://tcc-happykids-production.up.railway.app/auth/redefinir-senha/${token}`;
         
         console.log(`🔗 Link de redefinição: ${resetUrl}`);
         
-        // Enviar email via SendGrid
+        // Enviar email via SendGrid - USANDO noreply@sendgrid.net
         const msg = {
             to: usuario.email,
-            from: 'lembrarvinicius@gmail.com',
+            from: 'noreply@sendgrid.net',  // Email padrão do SendGrid (NÃO precisa verificar)
             subject: 'Redefinição de Senha - HappyKids',
             html: `
                 <!DOCTYPE html>
@@ -173,21 +173,21 @@ router.post('/esqueceu-senha', async (req, res) => {
             text: `Olá ${usuario.nome}! Para redefinir sua senha, acesse: ${resetUrl}`
         };
         
-        await sgMail.send(msg);
-        
+        const response = await sgMail.send(msg);
+        console.log('✅ Resposta do SendGrid:', response);
         console.log(`✅ Email enviado com sucesso para: ${usuario.email}`);
         
         req.session.success = 'Email de recuperação enviado! Verifique sua caixa de entrada ou spam.';
         res.redirect('/auth/esqueceu-senha');
         
     } catch (error) {
-        console.error('❌ Erro ao enviar email:', error.response?.body || error);
+        console.error('❌ Erro completo:', error);
         
-        if (error.response?.body?.errors) {
-            console.error('Detalhes:', JSON.stringify(error.response.body.errors, null, 2));
+        if (error.response) {
+            console.error('❌ Corpo do erro:', error.response.body);
         }
         
-        req.session.error = 'Erro ao enviar email de recuperação. Tente novamente.';
+        req.session.error = 'Erro ao enviar email. Tente novamente.';
         res.redirect('/auth/esqueceu-senha');
     }
 });
@@ -245,7 +245,6 @@ router.post('/redefinir-senha/:token', async (req, res) => {
             return res.redirect('/auth/esqueceu-senha');
         }
         
-        // Atualizar senha
         usuario.senha = bcrypt.hashSync(senha, 10);
         usuario.resetToken = undefined;
         usuario.resetTokenExpiry = undefined;
