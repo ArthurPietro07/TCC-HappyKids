@@ -24,11 +24,6 @@ const BrinquedoSchema = new mongoose.Schema({
         required: true,
         min: 0
     },
-    preco_semanal: {
-        type: Number,
-        required: true,
-        min: 0
-    },
     disponivel: {
         type: Boolean,
         default: true
