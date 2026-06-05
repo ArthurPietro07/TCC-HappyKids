@@ -393,4 +393,30 @@ router.get('/calendario', async (req, res) => {
     }
 });
 
+// ==================== EXCLUIR COMENTÁRIOS ====================
+router.delete('/excluir-comentario/:id', async (req, res) => {
+    try {
+        console.log('=== ADMIN EXCLUINDO COMENTÁRIO ===');
+        console.log('ID recebido:', req.params.id);
+        
+        if (!req.params.id) {
+            return res.status(400).json({ error: 'ID do comentário não fornecido' });
+        }
+        
+        const comentario = await Comentario.findById(req.params.id);
+        
+        if (!comentario) {
+            return res.status(404).json({ error: 'Comentário não encontrado' });
+        }
+        
+        await Comentario.findByIdAndDelete(req.params.id);
+        console.log(`✅ Comentário excluído com sucesso: ${req.params.id}`);
+        
+        res.json({ success: true, message: 'Comentário excluído com sucesso' });
+    } catch (error) {
+        console.error('Erro ao excluir comentário:', error);
+        res.status(500).json({ error: 'Erro ao excluir comentário: ' + error.message });
+    }
+});
+
 module.exports = router;

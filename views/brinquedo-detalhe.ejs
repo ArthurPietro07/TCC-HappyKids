@@ -66,7 +66,7 @@
                     </div>
                 </div>
                 
-                <!-- Descrição com Ver mais/Ver menos e formatação preservada -->
+                <!-- Descrição com Ver mais/Ver menos -->
                 <div class="mb-6 md:mb-8">
                     <div id="descricaoContainer">
                         <div id="descricaoTexto" class="text-gray-600 leading-relaxed text-sm md:text-lg whitespace-pre-wrap break-words"><%= brinquedo.descricao %></div>
@@ -333,18 +333,47 @@ async function enviarComentario(event) {
     finally { hideLoading(); }
 }
 
+
 async function excluirComentario(id) {
-    if (!confirm('Excluir este comentário?')) return;
+    if (!confirm('Tem certeza que deseja excluir este comentário?')) return;
+    
     showLoading();
     try {
-        const response = await fetch(`/cliente/excluir-comentario/${id}`, { method: 'DELETE' });
+        console.log('Tentando excluir comentário ID:', id);
+        
+        // MUDE AQUI: Use a rota do admin em vez da do cliente
+        const url = `/admin/excluir-comentario/${id}`;
+        console.log('URL da requisição:', url);
+        
+        const response = await fetch(url, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        console.log('Status da resposta:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
         const data = await response.json();
-        if (data.success) { alert('Comentário excluído!'); location.reload(); }
-        else alert('Erro ao excluir');
-    } catch (error) { alert('Erro ao excluir'); }
-    finally { hideLoading(); }
+        console.log('Resposta:', data);
+        
+        if (data.success) {
+            alert('Comentário excluído com sucesso!');
+            location.reload();
+        } else {
+            alert(data.error || 'Erro ao excluir comentário');
+        }
+    } catch (error) {
+        console.error('Erro detalhado:', error);
+        alert('Erro ao excluir comentário: ' + error.message);
+    } finally {
+        hideLoading();
+    }
 }
-
 // Sistema de Ver mais/Ver menos para descrição
 document.addEventListener('DOMContentLoaded', function() {
     const descricaoDiv = document.getElementById('descricaoTexto');
