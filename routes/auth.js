@@ -2,29 +2,11 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const Usuario = require('../models/Usuario');
-const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 
-// Configuração REAL do Gmail
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    auth: {
-        user: 'lembrarvinicius@gmail.com',
-        pass: 'muoz vgex rgzn etep'
-    }
-});
-
-// Verificar se a conexão está funcionando
-transporter.verify((error, success) => {
-    if (error) {
-        console.error('❌ Erro na conexão com email:', error);
-    } else {
-        console.log('✅ Email configurado com sucesso!');
-        console.log(`📧 Enviando emails como: lembrarvinicius@gmail.com`);
-    }
-});
+// Configuração do SendGrid
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey('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');
 
 // ==================== LOGIN ====================
 router.get('/login', (req, res) => {
@@ -110,7 +92,7 @@ router.get('/logout', (req, res) => {
     res.redirect('/');
 });
 
-// ==================== ESQUECEU SENHA (RECUPERAÇÃO) ====================
+// ==================== ESQUECEU SENHA ====================
 router.get('/esqueceu-senha', (req, res) => {
     res.render('esqueceu-senha', { error: req.session.error, success: req.session.success });
 });
@@ -119,7 +101,7 @@ router.post('/esqueceu-senha', async (req, res) => {
     try {
         const { email } = req.body;
         
-        console.log(`📧 Tentando recuperar senha para: ${email}`);
+        console.log(`📧 Recuperando senha para: ${email}`);
         
         const usuario = await Usuario.findOne({ email: email.toLowerCase() });
         
@@ -134,13 +116,15 @@ router.post('/esqueceu-senha', async (req, res) => {
         usuario.resetTokenExpiry = Date.now() + 3600000; // 1 hora
         await usuario.save();
         
-        // URL de redefinição (mude para sua URL real quando for produção)
-        const resetUrl = `http://localhost:3000/auth/redefinir-senha/${token}`;
+        // URL de redefinição (Railway)
+        const resetUrl = `https://tcc-happykids-production.up.railway.app/auth/redefinir-senha/${token}`;
         
-        // Configurar o email
-        const mailOptions = {
-            from: `"HappyKids" <lembrarvinicius@gmail.com>`,
+        console.log(`🔗 Link de redefinição: ${resetUrl}`);
+        
+        // Enviar email via SendGrid
+        const msg = {
             to: usuario.email,
+            from: 'lembrarvinicius@gmail.com',
             subject: 'Redefinição de Senha - HappyKids',
             html: `
                 <!DOCTYPE html>
@@ -166,11 +150,10 @@ router.post('/esqueceu-senha', async (req, res) => {
                         <div class="content">
                             <h2>Olá, ${usuario.nome}!</h2>
                             <p>Recebemos uma solicitação para redefinir sua senha.</p>
-                            <p>Clique no botão abaixo para criar uma nova senha:</p>
                             <div style="text-align: center;">
                                 <a href="${resetUrl}" class="button">Redefinir Senha</a>
                             </div>
-                            <p>Se o botão não funcionar, copie e cole o link abaixo no seu navegador:</p>
+                            <p>Se o botão não funcionar, copie e cole o link abaixo:</p>
                             <p style="background: #f4f4f4; padding: 10px; border-radius: 4px; word-break: break-all;">
                                 ${resetUrl}
                             </p>
@@ -190,17 +173,20 @@ router.post('/esqueceu-senha', async (req, res) => {
             text: `Olá ${usuario.nome}! Para redefinir sua senha, acesse: ${resetUrl}`
         };
         
-        // Enviar o email
-        await transporter.sendMail(mailOptions);
+        await sgMail.send(msg);
         
-        console.log(`✅ Email de recuperação enviado para: ${usuario.email}`);
-        console.log(`🔗 Link: ${resetUrl}`);
+        console.log(`✅ Email enviado com sucesso para: ${usuario.email}`);
         
-        req.session.success = 'Email de recuperação enviado! Verifique sua caixa de entrada.';
+        req.session.success = 'Email de recuperação enviado! Verifique sua caixa de entrada ou spam.';
         res.redirect('/auth/esqueceu-senha');
         
     } catch (error) {
-        console.error('❌ Erro ao enviar email:', error);
+        console.error('❌ Erro ao enviar email:', error.response?.body || error);
+        
+        if (error.response?.body?.errors) {
+            console.error('Detalhes:', JSON.stringify(error.response.body.errors, null, 2));
+        }
+        
         req.session.error = 'Erro ao enviar email de recuperação. Tente novamente.';
         res.redirect('/auth/esqueceu-senha');
     }
