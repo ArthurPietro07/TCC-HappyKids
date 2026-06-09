@@ -17,7 +17,13 @@ const UsuarioSchema = new mongoose.Schema({
     },
     telefone: {
         type: String,
-        required: true
+        required: true,
+        validate: {
+            validator: function(v) {
+                return /^\(\d{2}\) \d{4,5}-\d{4}$/.test(v);
+            },
+            message: 'Telefone inválido. Use o formato (00) 00000-0000'
+        }
     },
     tipo: {
         type: String,
@@ -27,9 +33,7 @@ const UsuarioSchema = new mongoose.Schema({
     data_cadastro: {
         type: Date,
         default: Date.now
-    },
-    resetToken: String,
-    resetTokenExpiry: Date
+    }
 });
 
 module.exports = mongoose.model('Usuario', UsuarioSchema);
