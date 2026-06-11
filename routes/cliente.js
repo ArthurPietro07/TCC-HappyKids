@@ -73,10 +73,15 @@ router.get('/carrinho', (req, res) => {
     res.render('cliente/carrinho');
 });
 
-// Finalizar aluguel
+// Finalizar aluguel - CORRIGIDO
 router.post('/finalizar', async (req, res) => {
     try {
         const { itens, data_inicio, data_fim, quantidade_dias, hora_entrega, forma_pagamento, endereco_entrega, valor_total } = req.body;
+        
+        console.log('=== FINALIZAR ALUGUEL ===');
+        console.log('Data início:', data_inicio);
+        console.log('Data fim:', data_fim);
+        console.log('Quantidade dias:', quantidade_dias);
         
         const itensParse = JSON.parse(itens);
         const inicio = new Date(data_inicio);
@@ -84,6 +89,12 @@ router.post('/finalizar', async (req, res) => {
         
         if (inicio > fim) {
             return res.status(400).json({ error: 'Data de início inválida' });
+        }
+        
+        // Validar se a quantidade de dias está correta
+        const diasCalculados = Math.floor((fim - inicio) / (1000 * 60 * 60 * 24)) + 1;
+        if (diasCalculados !== quantidade_dias) {
+            console.log(`Aviso: dias calculados (${diasCalculados}) vs informado (${quantidade_dias})`);
         }
         
         const itensParaSalvar = [];
@@ -131,7 +142,7 @@ router.post('/finalizar', async (req, res) => {
             usuario_id: req.session.user.id,
             data_inicio: inicio,
             data_fim: fim,
-            quantidade_dias: quantidade_dias || parseInt(quantidade_dias),
+            quantidade_dias: quantidade_dias,
             hora_entrega,
             valor_total: parseFloat(valor_total),
             forma_pagamento,
@@ -140,6 +151,7 @@ router.post('/finalizar', async (req, res) => {
         });
         
         await novoAluguel.save();
+        console.log('Aluguel salvo com sucesso!');
         
         res.json({ success: true, aluguelId: novoAluguel._id });
     } catch (error) {
@@ -165,9 +177,7 @@ router.post('/perfil', upload.single('avatar'), async (req, res) => {
         const { nome, telefone } = req.body;
         const usuario = await Usuario.findById(req.session.user.id);
         
-        // Se veio uma nova imagem, atualizar
         if (req.file) {
-            // Remover avatar antigo se não for o padrão
             if (usuario.avatar && usuario.avatar !== '' && !usuario.avatar.includes('default')) {
                 const oldAvatarPath = path.join(__dirname, '../public', usuario.avatar);
                 if (fs.existsSync(oldAvatarPath)) {
@@ -181,7 +191,6 @@ router.post('/perfil', upload.single('avatar'), async (req, res) => {
         usuario.telefone = telefone;
         await usuario.save();
         
-        // Atualizar sessão
         req.session.user.nome = nome;
         req.session.user.avatar = usuario.avatar;
         
