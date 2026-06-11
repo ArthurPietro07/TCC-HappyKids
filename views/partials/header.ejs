@@ -21,6 +21,62 @@
         .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         @media (max-width: 640px) { .container { padding-left: 1rem; padding-right: 1rem; } }
+        
+        .user-menu {
+            position: relative;
+            display: inline-block;
+        }
+        .user-menu-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: calc(100% + 8px);
+            background-color: white;
+            min-width: 220px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 12px;
+            z-index: 1000;
+            overflow: hidden;
+        }
+        .user-menu:hover .user-menu-content {
+            display: block;
+        }
+        .user-menu-content::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            right: 0;
+            left: 0;
+            height: 8px;
+            background: transparent;
+        }
+        .avatar-container {
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+        .avatar-container:hover {
+            background-color: #f3f4f6;
+        }
+        .avatar-circle {
+            width: 40px;
+            height: 40px;
+            background-color: #6366f1;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .avatar-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -33,6 +89,7 @@
                 
                 <div class="hidden md:flex items-center gap-4 lg:gap-6">
                     <a href="/catalogo" class="text-gray-700 hover:text-indigo-600 font-medium transition">Catálogo</a>
+                    
                     <% if (user) { %>
                         <% if (user.tipo === 'admin') { %>
                             <a href="/admin/dashboard" class="text-gray-700 hover:text-indigo-600 font-medium transition">Admin</a>
@@ -43,9 +100,33 @@
                                 Carrinho
                                 <span id="carrinhoCount" class="absolute -top-2 -right-3 bg-indigo-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
                             </a>
-                            <a href="/cliente/perfil" class="text-gray-700 hover:text-indigo-600 font-medium transition">Perfil</a>
                         <% } %>
-                        <a href="/auth/logout" class="bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 font-medium transition">Sair</a>
+                        
+                        <div class="user-menu">
+                            <div class="avatar-container">
+                                <% if (user.avatar && user.avatar !== '') { %>
+                                    <img src="<%= user.avatar %>" alt="<%= user.nome %>" class="avatar-img">
+                                <% } else { %>
+                                    <div class="avatar-circle">
+                                        <%= user.nome ? user.nome.charAt(0).toUpperCase() : 'U' %>
+                                    </div>
+                                <% } %>
+                            </div>
+                            <div class="user-menu-content">
+                                <div class="px-4 py-3 border-b border-gray-100">
+                                    <p class="font-semibold text-gray-900"><%= user.nome || 'Usuário' %></p>
+                                    <p class="text-xs text-gray-500"><%= user.email || '' %></p>
+                                </div>
+                                <a href="/cliente/perfil" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                    <span>Meu Perfil</span>
+                                </a>
+                                <a href="/auth/logout" class="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition border-t border-gray-100">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                                    <span>Sair</span>
+                                </a>
+                            </div>
+                        </div>
                     <% } else { %>
                         <a href="/auth/login" class="text-gray-700 hover:text-indigo-600 font-medium transition">Entrar</a>
                         <a href="/auth/cadastro" class="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 font-medium transition">Cadastrar</a>
@@ -65,10 +146,28 @@
                             <a href="/admin/dashboard" class="block py-2 text-gray-700 hover:text-indigo-600">Admin</a>
                         <% } else { %>
                             <a href="/cliente/meus-alugueis" class="block py-2 text-gray-700 hover:text-indigo-600">Meus Aluguéis</a>
-                            <a href="/cliente/carrinho" class="block py-2 text-gray-700 hover:text-indigo-600 flex items-center gap-2">Carrinho <span id="carrinhoCountMobile" class="bg-indigo-600 text-white text-xs font-bold rounded-full h-5 w-5 inline-flex items-center justify-center">0</span></a>
-                            <a href="/cliente/perfil" class="block py-2 text-gray-700 hover:text-indigo-600">Perfil</a>
+                            <a href="/cliente/carrinho" class="block py-2 text-gray-700 hover:text-indigo-600 flex items-center gap-2">
+                                Carrinho
+                                <span id="carrinhoCountMobile" class="bg-indigo-600 text-white text-xs font-bold rounded-full h-5 w-5 inline-flex items-center justify-center">0</span>
+                            </a>
                         <% } %>
-                        <a href="/auth/logout" class="block py-2 text-red-600 font-medium">Sair</a>
+                        <div class="border-t border-gray-100 pt-2 mt-2">
+                            <div class="flex items-center gap-3 px-2 py-2">
+                                <% if (user.avatar && user.avatar !== '') { %>
+                                    <img src="<%= user.avatar %>" alt="<%= user.nome %>" class="w-10 h-10 rounded-full object-cover">
+                                <% } else { %>
+                                    <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                                        <span class="text-indigo-600 font-bold"><%= user.nome ? user.nome.charAt(0).toUpperCase() : 'U' %></span>
+                                    </div>
+                                <% } %>
+                                <div>
+                                    <p class="font-semibold text-gray-900"><%= user.nome || 'Usuário' %></p>
+                                    <p class="text-xs text-gray-500"><%= user.email || '' %></p>
+                                </div>
+                            </div>
+                            <a href="/cliente/perfil" class="block py-2 text-gray-700 hover:text-indigo-600">Meu Perfil</a>
+                            <a href="/auth/logout" class="block py-2 text-red-600 font-medium">Sair</a>
+                        </div>
                     <% } else { %>
                         <a href="/auth/login" class="block py-2 text-gray-700 hover:text-indigo-600">Entrar</a>
                         <a href="/auth/cadastro" class="block py-2 text-indigo-600 font-medium">Cadastrar</a>

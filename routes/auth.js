@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const Usuario = require('../models/Usuario');
+const upload = require('../config/multer');
 
 // ==================== LOGIN ====================
 router.get('/login', (req, res) => {
@@ -32,6 +33,7 @@ router.post('/login', async (req, res) => {
             id: usuario._id,
             nome: usuario.nome,
             email: usuario.email,
+            avatar: usuario.avatar || '',
             tipo: usuario.tipo
         };
         
@@ -58,7 +60,7 @@ router.get('/cadastro', (req, res) => {
     req.session.success = null;
 });
 
-router.post('/cadastro', async (req, res) => {
+router.post('/cadastro', upload.single('avatar'), async (req, res) => {
     try {
         const { nome, email, telefone, senha, confirmar_senha } = req.body;
         
@@ -80,11 +82,17 @@ router.post('/cadastro', async (req, res) => {
             return res.redirect('/auth/cadastro');
         }
         
+        let avatarUrl = '';
+        if (req.file) {
+            avatarUrl = '/uploads/avatars/' + req.file.filename;
+        }
+        
         const usuario = new Usuario({
             nome,
             email: email.toLowerCase(),
             telefone,
             senha: bcrypt.hashSync(senha, 10),
+            avatar: avatarUrl,
             tipo: 'cliente',
             data_cadastro: new Date()
         });
@@ -97,6 +105,7 @@ router.post('/cadastro', async (req, res) => {
             id: usuario._id,
             nome: usuario.nome,
             email: usuario.email,
+            avatar: usuario.avatar,
             tipo: usuario.tipo
         };
         
@@ -104,6 +113,7 @@ router.post('/cadastro', async (req, res) => {
         res.redirect('/');
         
     } catch (error) {
+        console.error(error);
         req.session.error = 'Erro ao cadastrar';
         res.redirect('/auth/cadastro');
     }

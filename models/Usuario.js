@@ -17,13 +17,11 @@ const UsuarioSchema = new mongoose.Schema({
     },
     telefone: {
         type: String,
-        required: true,
-        validate: {
-            validator: function(v) {
-                return /^\(\d{2}\) \d{4,5}-\d{4}$/.test(v);
-            },
-            message: 'Telefone inválido. Use o formato (00) 00000-0000'
-        }
+        required: true
+    },
+    avatar: {
+        type: String,
+        default: ''
     },
     tipo: {
         type: String,

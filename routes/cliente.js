@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middlewares/auth');
+const upload = require('../config/multer');
 const Aluguel = require('../models/Aluguel');
 const Brinquedo = require('../models/Brinquedo');
 const Comentario = require('../models/Comentario');
 const Usuario = require('../models/Usuario');
+const fs = require('fs');
+const path = require('path');
 
 function formatarData(data) {
     if (!data) return '';
@@ -70,20 +73,17 @@ router.get('/carrinho', (req, res) => {
     res.render('cliente/carrinho');
 });
 
-// Finalizar aluguel - VERSÃO CORRIGIDA
+// Finalizar aluguel
 router.post('/finalizar', async (req, res) => {
     try {
-        const { itens, data_inicio, data_fim, hora_entrega, forma_pagamento, endereco_entrega, valor_total } = req.body;
-        
-        console.log('=== FINALIZAR ALUGUEL ===');
-        console.log('Itens recebidos:', itens);
+        const { itens, data_inicio, data_fim, quantidade_dias, hora_entrega, forma_pagamento, endereco_entrega, valor_total } = req.body;
         
         const itensParse = JSON.parse(itens);
         const inicio = new Date(data_inicio);
         const fim = new Date(data_fim);
         
         if (inicio > fim) {
-            return res.status(400).json({ error: 'Data de início não pode ser maior que data de fim' });
+            return res.status(400).json({ error: 'Data de início inválida' });
         }
         
         const itensParaSalvar = [];
@@ -93,8 +93,6 @@ router.post('/finalizar', async (req, res) => {
             if (!brinquedo) {
                 return res.status(400).json({ error: `Brinquedo ${item.nome} não encontrado` });
             }
-            
-            console.log(`Brinquedo encontrado: ${brinquedo.nome}, ID: ${brinquedo._id}`);
             
             const alugueisConflitantes = await Aluguel.find({
                 'itens.brinquedo_id': item.id,
@@ -125,16 +123,15 @@ router.post('/finalizar', async (req, res) => {
                 nome_brinquedo: brinquedo.nome,
                 quantidade: item.quantidade,
                 preco_diaria: brinquedo.preco_diaria,
-                subtotal: item.subtotal
+                subtotal: brinquedo.preco_diaria * item.quantidade
             });
         }
-        
-        console.log('Itens para salvar:', JSON.stringify(itensParaSalvar, null, 2));
         
         const novoAluguel = new Aluguel({
             usuario_id: req.session.user.id,
             data_inicio: inicio,
             data_fim: fim,
+            quantidade_dias: quantidade_dias || parseInt(quantidade_dias),
             hora_entrega,
             valor_total: parseFloat(valor_total),
             forma_pagamento,
@@ -143,7 +140,6 @@ router.post('/finalizar', async (req, res) => {
         });
         
         await novoAluguel.save();
-        console.log('Aluguel salvo com sucesso!');
         
         res.json({ success: true, aluguelId: novoAluguel._id });
     } catch (error) {
@@ -152,23 +148,44 @@ router.post('/finalizar', async (req, res) => {
     }
 });
 
-// Perfil
+// Perfil - GET
 router.get('/perfil', async (req, res) => {
     try {
         const usuario = await Usuario.findById(req.session.user.id);
-        res.render('perfil', { usuario, formatarData });
+        res.render('cliente/perfil', { usuario, formatarData });
     } catch (error) {
         console.error(error);
         res.render('error', { message: 'Erro ao carregar perfil', error: {} });
     }
 });
 
-router.post('/perfil', async (req, res) => {
+// Perfil - POST (atualizar dados e avatar)
+router.post('/perfil', upload.single('avatar'), async (req, res) => {
     try {
         const { nome, telefone } = req.body;
-        await Usuario.findByIdAndUpdate(req.session.user.id, { nome, telefone });
+        const usuario = await Usuario.findById(req.session.user.id);
+        
+        // Se veio uma nova imagem, atualizar
+        if (req.file) {
+            // Remover avatar antigo se não for o padrão
+            if (usuario.avatar && usuario.avatar !== '' && !usuario.avatar.includes('default')) {
+                const oldAvatarPath = path.join(__dirname, '../public', usuario.avatar);
+                if (fs.existsSync(oldAvatarPath)) {
+                    fs.unlinkSync(oldAvatarPath);
+                }
+            }
+            usuario.avatar = '/uploads/avatars/' + req.file.filename;
+        }
+        
+        usuario.nome = nome;
+        usuario.telefone = telefone;
+        await usuario.save();
+        
+        // Atualizar sessão
         req.session.user.nome = nome;
-        req.session.success = 'Perfil atualizado com sucesso';
+        req.session.user.avatar = usuario.avatar;
+        
+        req.session.success = 'Perfil atualizado com sucesso!';
         res.redirect('/cliente/perfil');
     } catch (error) {
         console.error(error);
