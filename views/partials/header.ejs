@@ -4,6 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>HappyKids - Locação de Brinquedos</title>
+    
+    <!-- ===== OPEN GRAPH TAGS ===== -->
+    <meta property="og:title" content="HappyKids - Locação de Brinquedos para Festas e Eventos" />
+    <meta property="og:description" content="Alugue brinquedos de qualidade para festas, aniversários e eventos. Variedade, preços justos e entrega rápida. Faça sua reserva agora!" />
+    <meta property="og:image" content="https://tcc-happykids-production.up.railway.app/uploads/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="https://tcc-happykids-production.up.railway.app/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="HappyKids" />
+    <meta property="og:locale" content="pt_BR" />
+    <!-- ========================== -->
+    
     <link rel="icon" type="image/png" href="/uploads/logo-pequena.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -22,13 +35,38 @@
         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         @media (max-width: 640px) { .container { padding-left: 1rem; padding-right: 1rem; } }
         
-        /* Menu do usuário - corrigido para não fechar */
+        /* Menu do usuário */
         .user-menu {
             position: relative;
             display: inline-block;
         }
-        
-        /* Área do avatar */
+        .user-menu-content {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 5px);
+            background-color: white;
+            min-width: 220px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 12px;
+            z-index: 1000;
+            overflow: hidden;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0.2s, opacity 0.2s;
+        }
+        .user-menu:hover .user-menu-content {
+            visibility: visible;
+            opacity: 1;
+        }
+        .user-menu-content::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            right: 0;
+            left: 0;
+            height: 10px;
+            background: transparent;
+        }
         .avatar-container {
             cursor: pointer;
             padding: 6px;
@@ -41,42 +79,6 @@
         .avatar-container:hover {
             background-color: #f3f4f6;
         }
-        
-        /* Menu dropdown */
-        .user-menu-content {
-            position: absolute;
-            right: 0;
-            top: 100%;
-            margin-top: 0;
-            background-color: white;
-            min-width: 220px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            border-radius: 12px;
-            z-index: 1000;
-            overflow: hidden;
-            visibility: hidden;
-            opacity: 0;
-            transition: visibility 0.2s, opacity 0.2s;
-        }
-        
-        /* Mostrar menu ao passar o mouse no container TODO */
-        .user-menu:hover .user-menu-content {
-            visibility: visible;
-            opacity: 1;
-        }
-        
-        /* PONTE INVISÍVEL - conecta avatar ao menu */
-        .user-menu-content::before {
-            content: '';
-            position: absolute;
-            top: -10px;
-            right: 0;
-            left: 0;
-            height: 10px;
-            background: transparent;
-        }
-        
-        /* Tamanhos do avatar */
         .avatar-circle {
             width: 42px;
             height: 42px;
@@ -95,8 +97,6 @@
             border-radius: 50%;
             object-fit: cover;
         }
-        
-        /* Itens do menu */
         .user-menu-content a {
             transition: background-color 0.2s;
             display: flex;
@@ -123,7 +123,6 @@
                     <img src="/uploads/logo-grande.png" alt="HappyKids" class="h-12 sm:h-16 md:h-20 w-auto">
                 </a>
                 
-                <!-- Desktop Menu -->
                 <div class="hidden md:flex items-center gap-4 lg:gap-6">
                     <a href="/catalogo" class="text-gray-700 hover:text-indigo-600 font-medium transition">Catálogo</a>
                     
@@ -139,7 +138,6 @@
                             </a>
                         <% } %>
                         
-                        <!-- Menu do Usuário -->
                         <div class="user-menu">
                             <div class="avatar-container">
                                 <% if (user.avatar && user.avatar !== '') { %>
@@ -171,13 +169,11 @@
                     <% } %>
                 </div>
                 
-                <!-- Mobile Menu Button -->
                 <button class="md:hidden text-gray-700 p-2" onclick="document.getElementById('mobileMenu').classList.toggle('hidden')">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                 </button>
             </div>
             
-            <!-- Mobile Menu -->
             <div id="mobileMenu" class="hidden md:hidden pb-4 border-t border-gray-100">
                 <div class="flex flex-col space-y-3 pt-4">
                     <a href="/catalogo" class="block py-2 text-gray-700 hover:text-indigo-600">Catálogo</a>
