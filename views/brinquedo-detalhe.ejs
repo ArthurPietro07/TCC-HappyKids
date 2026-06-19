@@ -165,7 +165,7 @@
             </div>
         </div>
         
-        <!-- Comentários -->
+        <!-- Comentários com Avatares -->
         <div class="border-t p-4 md:p-8">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8 gap-3">
                 <h2 class="text-xl md:text-3xl font-bold text-gray-900">Avaliações dos Clientes</h2>
@@ -209,6 +209,16 @@
                             <div class="flex justify-between items-start mb-2 md:mb-3 gap-2">
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center gap-2 md:gap-3 mb-1 md:mb-2 flex-wrap">
+                                        <!-- Avatar do usuário -->
+                                        <div class="flex-shrink-0">
+                                            <% if (comentario.usuario_id.avatar && comentario.usuario_id.avatar !== '') { %>
+                                                <img src="<%= comentario.usuario_id.avatar %>" alt="<%= comentario.usuario_id.nome %>" class="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover border-2 border-gray-200">
+                                            <% } else { %>
+                                                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-indigo-100 flex items-center justify-center border-2 border-gray-200">
+                                                    <span class="text-indigo-600 font-bold text-sm md:text-base"><%= comentario.usuario_id.nome.charAt(0).toUpperCase() %></span>
+                                                </div>
+                                            <% } %>
+                                        </div>
                                         <span class="font-semibold text-gray-900 text-base md:text-lg truncate"><%= comentario.usuario_id.nome %></span>
                                         <div class="flex flex-shrink-0">
                                             <% for(let i = 1; i <= 5; i++) { %>
@@ -333,34 +343,17 @@ async function enviarComentario(event) {
     finally { hideLoading(); }
 }
 
-
 async function excluirComentario(id) {
     if (!confirm('Tem certeza que deseja excluir este comentário?')) return;
-    
     showLoading();
     try {
-        console.log('Tentando excluir comentário ID:', id);
-        
-        // MUDE AQUI: Use a rota do admin em vez da do cliente
-        const url = `/admin/excluir-comentario/${id}`;
-        console.log('URL da requisição:', url);
-        
-        const response = await fetch(url, {
+        const response = await fetch(`/admin/excluir-comentario/${id}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json'
             }
         });
-        
-        console.log('Status da resposta:', response.status);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-        
         const data = await response.json();
-        console.log('Resposta:', data);
-        
         if (data.success) {
             alert('Comentário excluído com sucesso!');
             location.reload();
@@ -368,12 +361,13 @@ async function excluirComentario(id) {
             alert(data.error || 'Erro ao excluir comentário');
         }
     } catch (error) {
-        console.error('Erro detalhado:', error);
-        alert('Erro ao excluir comentário: ' + error.message);
+        console.error('Erro:', error);
+        alert('Erro ao excluir comentário');
     } finally {
         hideLoading();
     }
 }
+
 // Sistema de Ver mais/Ver menos para descrição
 document.addEventListener('DOMContentLoaded', function() {
     const descricaoDiv = document.getElementById('descricaoTexto');
