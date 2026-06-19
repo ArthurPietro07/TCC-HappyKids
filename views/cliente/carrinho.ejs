@@ -164,17 +164,28 @@ function calcularResumo(totalItens) {
     const quantidadeDias = parseInt(document.getElementById('quantidadeDias').value) || 0;
     
     if (dataInicio && quantidadeDias > 0) {
-        const inicio = new Date(dataInicio);
+        // CORREÇÃO: Criar a data a partir da string para evitar problemas de fuso
+        const partes = dataInicio.split('-');
+        const inicio = new Date(partes[0], partes[1] - 1, partes[2]);
+        
         const fim = new Date(inicio);
-        fim.setDate(fim.getDate() + quantidadeDias - 1); // CORRIGIDO: -1
+        fim.setDate(fim.getDate() + quantidadeDias - 1);
         
         const dataRetirada = new Date(fim);
         dataRetirada.setDate(dataRetirada.getDate() + 1);
         
-        document.getElementById('resumoDataInicio').innerText = inicio.toLocaleDateString('pt-BR');
+        // Formatar datas manualmente para evitar fuso horário
+        const formatarData = (data) => {
+            const dia = String(data.getDate()).padStart(2, '0');
+            const mes = String(data.getMonth() + 1).padStart(2, '0');
+            const ano = data.getFullYear();
+            return `${dia}/${mes}/${ano}`;
+        };
+        
+        document.getElementById('resumoDataInicio').innerText = formatarData(inicio);
         document.getElementById('resumoDias').innerText = quantidadeDias;
-        document.getElementById('resumoDataFim').innerText = fim.toLocaleDateString('pt-BR');
-        document.getElementById('resumoDataRetirada').innerText = dataRetirada.toLocaleDateString('pt-BR');
+        document.getElementById('resumoDataFim').innerText = formatarData(fim);
+        document.getElementById('resumoDataRetirada').innerText = formatarData(dataRetirada);
         
         const totalFinal = totalItens * quantidadeDias;
         document.getElementById('resumoTotal').innerText = totalFinal.toFixed(2);
@@ -198,11 +209,21 @@ document.getElementById('formFinalizar').addEventListener('submit', async (e) =>
         return;
     }
     
-    const inicio = new Date(dataInicio);
+    // CORREÇÃO: Criar a data a partir da string
+    const partes = dataInicio.split('-');
+    const inicio = new Date(partes[0], partes[1] - 1, partes[2]);
     const fim = new Date(inicio);
-    fim.setDate(fim.getDate() + quantidadeDias - 1); // CORRIGIDO: -1
+    fim.setDate(fim.getDate() + quantidadeDias - 1);
     
     const total = carrinhoAtual.reduce((sum, item) => sum + (item.preco_diaria * item.quantidade), 0) * quantidadeDias;
+    
+    // Formatar data para YYYY-MM-DD
+    const formatarDataYYYYMMDD = (data) => {
+        const ano = data.getFullYear();
+        const mes = String(data.getMonth() + 1).padStart(2, '0');
+        const dia = String(data.getDate()).padStart(2, '0');
+        return `${ano}-${mes}-${dia}`;
+    };
     
     try {
         const data = await fetchAPI('/cliente/finalizar', {
@@ -210,7 +231,7 @@ document.getElementById('formFinalizar').addEventListener('submit', async (e) =>
             body: JSON.stringify({
                 itens: JSON.stringify(carrinhoAtual),
                 data_inicio: dataInicio,
-                data_fim: fim.toISOString().split('T')[0],
+                data_fim: formatarDataYYYYMMDD(fim),
                 quantidade_dias: quantidadeDias,
                 hora_entrega: horaEntrega,
                 forma_pagamento: formaPagamento,
