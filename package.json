@@ -4,11 +4,12 @@
   "description": "Sistema de locacao de brinquedos",
   "main": "app.js",
   "engines": {
-    "node": "20.x"
+    "node": "18.x"
   },
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "postinstall": "npm rebuild mongoose"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -18,7 +19,7 @@
     "express-session": "^1.17.3",
     "moment": "^2.29.4",
     "moment-timezone": "^0.5.43",
-    "mongoose": "^7.8.0",
+    "mongoose": "^7.0.0",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.5"
   },
