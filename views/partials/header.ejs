@@ -8,10 +8,10 @@
     <!-- ===== OPEN GRAPH TAGS ===== -->
     <meta property="og:title" content="HappyKids - Locação de Brinquedos para Festas e Eventos" />
     <meta property="og:description" content="Alugue brinquedos de qualidade para festas, aniversários e eventos. Variedade, preços justos e entrega rápida. Faça sua reserva agora!" />
-    <meta property="og:image" content="https://tcc-happykids-production.up.railway.app/uploads/og.png" />
+    <meta property="og:image" content="https://<%= process.env.APP_URL || 'happykids.onrender.com' %>/uploads/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:url" content="https://tcc-happykids-production.up.railway.app/" />
+    <meta property="og:url" content="https://<%= process.env.APP_URL || 'happykids.onrender.com' %>/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="HappyKids" />
     <meta property="og:locale" content="pt_BR" />
@@ -35,7 +35,6 @@
         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         @media (max-width: 640px) { .container { padding-left: 1rem; padding-right: 1rem; } }
         
-        /* Menu do usuário */
         .user-menu {
             position: relative;
             display: inline-block;

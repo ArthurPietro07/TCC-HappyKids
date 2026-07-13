@@ -9,6 +9,9 @@ dotenv.config();
 
 const app = express();
 
+// IMPORTANTE PARA O RENDER - Confiar no proxy
+app.set('trust proxy', 1);
+
 // Configuração de views
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -23,10 +26,14 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'happykids_secret_key_2024',
     resave: false,
     saveUninitialized: true,
-    cookie: { maxAge: 3600000 }
+    cookie: { 
+        maxAge: 3600000,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax'
+    }
 }));
 
-// Middleware para mensagens flash - NÃO LIMPAR AQUI
+// Middleware para mensagens flash
 app.use((req, res, next) => {
     res.locals.user = req.session.user || null;
     res.locals.moment = moment;
@@ -43,7 +50,6 @@ app.use('/admin', require('./routes/admin'));
 
 // Middleware para LIMPAR mensagens APÓS as rotas serem processadas
 app.use((req, res, next) => {
-    // Limpar mensagens apenas após a resposta ser enviada
     const originalSend = res.send;
     res.send = function(data) {
         req.session.success = null;
