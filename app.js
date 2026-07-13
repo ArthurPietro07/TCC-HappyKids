@@ -69,4 +69,11 @@ app.use((req, res) => {
     });
 });
 
+// ========== INICIALIZAÇÃO DO SERVIDOR ==========
+// O servidor escuta na porta definida pelo Render (PORT) ou 10000 como fallback
+const port = process.env.PORT || 10000;
+app.listen(port, '0.0.0.0', () => {
+    console.log(`✅ Servidor rodando na porta ${port}`);
+});
+
 module.exports = app;
