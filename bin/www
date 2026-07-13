@@ -9,7 +9,7 @@ const app = require('../app');
 const http = require('http');
 
 // Normaliza a porta para o servidor
-const port = normalizePort(process.env.PORT || '3000');
+const port = normalizePort(process.env.PORT || '10000'); // <-- MUDANÇA AQUI
 app.set('port', port);
 
 // Cria o servidor HTTP usando o app Express
