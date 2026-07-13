@@ -42,6 +42,12 @@ app.use((req, res, next) => {
     next();
 });
 
+// ===== REDIRECIONAMENTOS =====
+app.get('/login', (req, res) => res.redirect('/auth/login'));
+app.get('/cadastro', (req, res) => res.redirect('/auth/cadastro'));
+app.get('/logout', (req, res) => res.redirect('/auth/logout'));
+// =============================
+
 // Rotas
 app.use('/', require('./routes/index'));
 app.use('/auth', require('./routes/auth'));
@@ -70,7 +76,6 @@ app.use((req, res) => {
 });
 
 // ========== INICIALIZAÇÃO DO SERVIDOR ==========
-// O servidor escuta na porta definida pelo Render (PORT) ou 10000 como fallback
 const port = process.env.PORT || 10000;
 app.listen(port, '0.0.0.0', () => {
     console.log(`✅ Servidor rodando na porta ${port}`);
