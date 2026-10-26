@@ -6,8 +6,12 @@ const Aluguel = require('../models/Aluguel');
 const Brinquedo = require('../models/Brinquedo');
 const Comentario = require('../models/Comentario');
 const Usuario = require('../models/Usuario');
-const fs = require('fs');
-const path = require('path');
+
+// Função auxiliar para converter arquivo em Base64
+const converterParaBase64 = (file) => {
+    const base64Image = file.buffer.toString('base64');
+    return `data:${file.mimetype};base64,${base64Image}`;
+};
 
 function formatarData(data) {
     if (!data) return '';
@@ -73,7 +77,7 @@ router.get('/carrinho', (req, res) => {
     res.render('cliente/carrinho');
 });
 
-// Finalizar aluguel - CORRIGIDO
+// Finalizar aluguel
 router.post('/finalizar', async (req, res) => {
     try {
         const { itens, data_inicio, data_fim, quantidade_dias, hora_entrega, forma_pagamento, endereco_entrega, valor_total } = req.body;
@@ -89,12 +93,6 @@ router.post('/finalizar', async (req, res) => {
         
         if (inicio > fim) {
             return res.status(400).json({ error: 'Data de início inválida' });
-        }
-        
-        // Validar se a quantidade de dias está correta
-        const diasCalculados = Math.floor((fim - inicio) / (1000 * 60 * 60 * 24)) + 1;
-        if (diasCalculados !== quantidade_dias) {
-            console.log(`Aviso: dias calculados (${diasCalculados}) vs informado (${quantidade_dias})`);
         }
         
         const itensParaSalvar = [];
@@ -142,7 +140,7 @@ router.post('/finalizar', async (req, res) => {
             usuario_id: req.session.user.id,
             data_inicio: inicio,
             data_fim: fim,
-            quantidade_dias: quantidade_dias,
+            quantidade_dias: parseInt(quantidade_dias),
             hora_entrega,
             valor_total: parseFloat(valor_total),
             forma_pagamento,
@@ -177,14 +175,9 @@ router.post('/perfil', upload.single('avatar'), async (req, res) => {
         const { nome, telefone } = req.body;
         const usuario = await Usuario.findById(req.session.user.id);
         
+        // Se enviou nova foto, converte para Base64 e substitui
         if (req.file) {
-            if (usuario.avatar && usuario.avatar !== '' && !usuario.avatar.includes('default')) {
-                const oldAvatarPath = path.join(__dirname, '../public', usuario.avatar);
-                if (fs.existsSync(oldAvatarPath)) {
-                    fs.unlinkSync(oldAvatarPath);
-                }
-            }
-            usuario.avatar = '/uploads/avatars/' + req.file.filename;
+            usuario.avatar = converterParaBase64(req.file);
         }
         
         usuario.nome = nome;
