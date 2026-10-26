@@ -4,6 +4,12 @@ const bcrypt = require('bcryptjs');
 const Usuario = require('../models/Usuario');
 const upload = require('../config/multer');
 
+// Função auxiliar para converter arquivo em Base64
+const converterParaBase64 = (file) => {
+    const base64Image = file.buffer.toString('base64');
+    return `data:${file.mimetype};base64,${base64Image}`;
+};
+
 // ==================== LOGIN ====================
 router.get('/login', (req, res) => {
     const email = req.session.tempEmail || '';
@@ -82,9 +88,10 @@ router.post('/cadastro', upload.single('avatar'), async (req, res) => {
             return res.redirect('/auth/cadastro');
         }
         
+        // Se o usuário enviou uma foto, converte para Base64 e salva no banco
         let avatarUrl = '';
         if (req.file) {
-            avatarUrl = '/uploads/avatars/' + req.file.filename;
+            avatarUrl = converterParaBase64(req.file);
         }
         
         const usuario = new Usuario({
