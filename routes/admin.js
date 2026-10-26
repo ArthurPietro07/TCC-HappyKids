@@ -7,11 +7,16 @@ const Aluguel = require('../models/Aluguel');
 const Usuario = require('../models/Usuario');
 const Comentario = require('../models/Comentario');
 const moment = require('moment');
-const fs = require('fs');
 const path = require('path');
 
 router.use(auth.isAuthenticated);
 router.use(auth.isAdmin);
+
+// Função auxiliar para converter arquivo em Base64
+const converterParaBase64 = (file) => {
+    const base64Image = file.buffer.toString('base64');
+    return `data:${file.mimetype};base64,${base64Image}`;
+};
 
 // Dashboard
 router.get('/dashboard', async (req, res) => {
@@ -65,7 +70,7 @@ router.get('/brinquedos/:id', async (req, res) => {
     }
 });
 
-// Criar novo brinquedo
+// Criar novo brinquedo (SALVANDO IMAGENS NO MONGODB)
 router.post('/brinquedos', upload.array('imagens', 10), async (req, res) => {
     try {
         console.log('POST - Body:', req.body);
@@ -77,8 +82,8 @@ router.post('/brinquedos', upload.array('imagens', 10), async (req, res) => {
         if (req.files && req.files.length > 0) {
             req.files.forEach((file, index) => {
                 imagens.push({
-                    url: '/uploads/' + file.filename,
-                    filename: file.filename,
+                    url: converterParaBase64(file), // Salva Base64 no MongoDB
+                    filename: file.originalname,
                     principal: index === 0
                 });
             });
@@ -111,26 +116,26 @@ router.post('/brinquedos', upload.array('imagens', 10), async (req, res) => {
     }
 });
 
-// Atualizar brinquedo
+// Atualizar brinquedo (SALVANDO IMAGENS NO MONGODB)
 router.put('/brinquedos/:id', upload.array('imagens', 10), async (req, res) => {
     try {
         console.log('PUT - Body:', req.body);
         console.log('PUT - Arquivos:', req.files ? req.files.length : 0);
         
-        const { nome, descricao, quantidade_estoque, preco_diaria, disponivel, destaque, imagensExistentes, imagensParaRemover } = req.body;
+        const { nome, descricao, quantidade_estoque, preco_diaria, disponivel, destaque, imagensExistentes } = req.body;
         
         const brinquedo = await Brinquedo.findById(req.params.id);
         if (!brinquedo) {
             return res.status(404).json({ error: 'Brinquedo não encontrado' });
         }
         
-        // Processar imagens existentes
+        // Mantém as imagens que o usuário não removeu
         let imagensAtuais = [];
         if (imagensExistentes && imagensExistentes !== '') {
             try {
-                const imagensExistentesArray = JSON.parse(imagensExistentes);
+                const filenamesExistentes = JSON.parse(imagensExistentes);
                 imagensAtuais = brinquedo.imagens.filter(img => 
-                    imagensExistentesArray.includes(img.filename)
+                    filenamesExistentes.includes(img.filename)
                 );
             } catch (e) {
                 imagensAtuais = brinquedo.imagens;
@@ -139,33 +144,18 @@ router.put('/brinquedos/:id', upload.array('imagens', 10), async (req, res) => {
             imagensAtuais = brinquedo.imagens;
         }
         
-        // Remover imagens marcadas
-        if (imagensParaRemover && imagensParaRemover !== '') {
-            try {
-                const imagensParaRemoverArray = JSON.parse(imagensParaRemover);
-                for (const filename of imagensParaRemoverArray) {
-                    const filePath = path.join(__dirname, '../public/uploads', filename);
-                    if (fs.existsSync(filePath) && filename !== 'default.jpg') {
-                        fs.unlinkSync(filePath);
-                    }
-                }
-            } catch (e) {
-                console.error('Erro ao remover imagens:', e);
-            }
-        }
-        
-        // Adicionar novas imagens
+        // Adiciona as novas imagens convertidas em Base64
         if (req.files && req.files.length > 0) {
             req.files.forEach((file, index) => {
                 imagensAtuais.push({
-                    url: '/uploads/' + file.filename,
-                    filename: file.filename,
+                    url: converterParaBase64(file), // Salva Base64 no MongoDB
+                    filename: file.originalname,
                     principal: imagensAtuais.length === 0 && index === 0
                 });
             });
         }
         
-        // Garantir imagem principal
+        // Garante que pelo menos uma imagem seja principal
         if (imagensAtuais.length > 0 && !imagensAtuais.some(img => img.principal)) {
             imagensAtuais[0].principal = true;
         }
@@ -223,17 +213,7 @@ router.delete('/brinquedos/:id', async (req, res) => {
             return res.status(404).json({ error: 'Brinquedo não encontrado' });
         }
         
-        if (brinquedo.imagens) {
-            for (const imagem of brinquedo.imagens) {
-                if (imagem.filename && imagem.filename !== 'default.jpg') {
-                    const filePath = path.join(__dirname, '../public/uploads', imagem.filename);
-                    if (fs.existsSync(filePath)) {
-                        fs.unlinkSync(filePath);
-                    }
-                }
-            }
-        }
-        
+        // Como as imagens estão no banco (Base64), não precisamos apagar arquivos do disco
         await Brinquedo.findByIdAndDelete(req.params.id);
         res.json({ success: true });
     } catch (error) {
@@ -345,7 +325,7 @@ router.get('/calendario', async (req, res) => {
             for (const item of aluguel.itens) {
                 let nomeBrinquedo = item.nome_brinquedo;
                 
-                if (!nomeBrinquedo || nomeBrinquedo === 'Brinquedo não identificado' || nomeBrinquedo === 'undefined') {
+                if (!nomeBrinquedo || nomeBrinquedo === 'Brinquedo não identificado') {
                     try {
                         const brinquedo = await Brinquedo.findById(item.brinquedo_id);
                         if (brinquedo && brinquedo.nome) {
@@ -393,16 +373,9 @@ router.get('/calendario', async (req, res) => {
     }
 });
 
-// ==================== EXCLUIR COMENTÁRIOS ====================
+// Excluir comentários (Admin)
 router.delete('/excluir-comentario/:id', async (req, res) => {
     try {
-        console.log('=== ADMIN EXCLUINDO COMENTÁRIO ===');
-        console.log('ID recebido:', req.params.id);
-        
-        if (!req.params.id) {
-            return res.status(400).json({ error: 'ID do comentário não fornecido' });
-        }
-        
         const comentario = await Comentario.findById(req.params.id);
         
         if (!comentario) {
@@ -410,12 +383,10 @@ router.delete('/excluir-comentario/:id', async (req, res) => {
         }
         
         await Comentario.findByIdAndDelete(req.params.id);
-        console.log(`✅ Comentário excluído com sucesso: ${req.params.id}`);
-        
-        res.json({ success: true, message: 'Comentário excluído com sucesso' });
+        res.json({ success: true });
     } catch (error) {
         console.error('Erro ao excluir comentário:', error);
-        res.status(500).json({ error: 'Erro ao excluir comentário: ' + error.message });
+        res.status(500).json({ error: 'Erro ao excluir comentário' });
     }
 });
 
